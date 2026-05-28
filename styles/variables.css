@@ -1,0 +1,23 @@
+
+:root {
+  --bg:       #f4f1eb;
+  --surface:  #faf8f4;
+  --surface2: #ede9e1;
+  --surface3: #e4dfd5;
+  --border:   #d4cfc5;
+  --border2:  #c4bdb0;
+  --ink:      #1a1714;
+  --ink2:     #3d3830;
+  --muted:    #8a8278;
+  --muted2:   #b0a99f;
+  --blue:     #1e3a5f;
+  --blue-lt:  #3466a0;
+  --teal:     #1a5c52;
+  --teal-lt:  #2d8a7a;
+  --amber:    #8a5a00;
+  --amber-lt: #c4820a;
+  --rose:     #7a1f2e;
+  --rose-lt:  #b03045;
+  --font-serif: 'Libre Baskerville', Georgia, serif;
+  --font-sans:  'DM Sans', system-ui, sans-serif;
+}

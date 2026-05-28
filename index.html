@@ -1,1 +1,611 @@
-/tmp/olio_index_final.html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OPES — Optimisation de Portefeuille</title>
+
+<!-- CDN dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<!-- CSS modules -->
+<link rel="stylesheet" href="styles/variables.css"/>
+<link rel="stylesheet" href="styles/base.css"/>
+<link rel="stylesheet" href="styles/layout.css"/>
+<link rel="stylesheet" href="styles/sidebar.css"/>
+<link rel="stylesheet" href="styles/cards.css"/>
+<link rel="stylesheet" href="styles/panels.css"/>
+<link rel="stylesheet" href="styles/auth.css"/>
+<link rel="stylesheet" href="styles/profile.css"/>
+<link rel="stylesheet" href="styles/contact.css"/>
+<link rel="stylesheet" href="styles/responsive.css"/>
+</head>
+<body>
+
+<!-- Auth check inline — avant tout rendu -->
+
+
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-box">
+    <h2 style="text-align:center; margin-bottom:1.5rem; font-family:var(--font-serif); font-size:1.45rem; font-weight:700; line-height:1.2; background:linear-gradient(135deg,#1e3a5f 0%,#3466a0 50%,#1a5c52 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+      OPES
+    </h2>
+    
+    <div id="authError" class="auth-error"></div>
+    
+    <div id="loginView">
+      <div class="auth-field">
+        <label for="loginEmail">Email</label>
+        <input type="text" id="loginEmail" class="auth-input" placeholder="Email ou Pseudo" />
+      </div>
+      <div class="auth-field">
+        <label for="loginPass">Mot de passe</label>
+        <input type="password" id="loginPass" placeholder="••••••••" />
+      </div>
+      
+      <button class="auth-btn" onclick="doLogin()">Connexion</button>
+      
+      <p style="text-align: center; margin-top: 15px; font-size: 0.9em; color: var(--rose-lt); cursor: pointer;" onclick="toggleAuthView('signup')">
+        Pas encore de compte ? <b>S'inscrire</b>
+      </p>
+    </div>
+
+    <div id="signupView" style="display: none;">
+      <div class="auth-field">
+        <label for="signupEmail">Email *</label>
+        <input type="email" id="signupEmail" placeholder="exemple@mail.com" />
+      </div>
+      <div class="auth-field">
+        <label for="signupPass">Mot de passe *</label>
+        <input type="password" id="signupPass" placeholder="••••••••" />
+      </div>
+      <div class="auth-field">
+        <label for="signupPseudo">Pseudo *</label>
+        <input type="text" id="signupPseudo" placeholder="Ton pseudo" />
+      </div>
+      <div class="auth-field">
+        <label for="signupNom">Nom</label>
+        <input type="text" id="signupNom" placeholder="Ton nom" />
+      </div>
+      <div class="auth-field">
+        <label for="signupPrenom">Prénom</label>
+        <input type="text" id="signupPrenom" placeholder="Ton prénom" />
+      </div>
+      <div class="auth-field">
+        <label for="signupDate">Date de naissance</label>
+        <input type="date" id="signupDate" />
+      </div>
+      
+      <button class="auth-btn" onclick="doSignup()" style="background: var(--blue);">Valider l'inscription</button>
+      
+      <p style="text-align: center; margin-top: 15px; font-size: 0.9em; color: var(--rose-lt); cursor: pointer;" onclick="toggleAuthView('login')">
+        Déjà un compte ? <b>Se connecter</b>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Chargement des données…</div>
+</div>
+
+<div class="asset-panel" id="assetPanel">
+  <div class="asset-panel-header">
+    <div class="home-title">OPES</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div id="homeLogToggle" onclick="homeToggleLogScale()"
+           style="display:flex;border:1.5px solid var(--blue);border-radius:6px;overflow:hidden;cursor:pointer;font-family:var(--font-sans);font-size:0.68rem;font-weight:600;letter-spacing:0.04em;user-select:none;">
+        <span id="homeLogBtn_lin" style="padding:4px 10px;background:var(--blue);color:white;transition:all 0.15s;">Linéaire</span>
+        <span id="homeLogBtn_log" style="padding:4px 10px;background:none;color:var(--blue);transition:all 0.15s;">Log</span>
+      </div>
+      <button onclick="resetSelection()" style="background:none;border:none;font-size:0.68rem;color:var(--muted);cursor:pointer;text-decoration:underline;font-family:var(--font-sans);">Réinitialiser</button>
+      <button class="panel-close-btn" onclick="closeAssetPanel()" title="Fermer">✕</button>
+    </div>
+  </div>
+  <div class="home-search-bar">
+    <div class="search-wrap" style="margin-bottom:0">
+      <input class="search-input" id="homeAssetSearch" type="text" placeholder="Rechercher un actif…" oninput="filterHomeAssets(this.value)"/>
+      <button class="search-clear" id="homeSearchClear" onclick="clearHomeSearch()">✕</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;padding:5px 32px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;gap:10px;">
+    <div style="width:14px;flex-shrink:0;"></div>
+    <div style="flex:1;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Actif</div>
+    <div style="min-width:50px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Labels</div>
+    <div style="min-width:54px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--blue)">Sharpe</div>
+    <div style="min-width:54px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber)">Vol.</div>
+    <div style="min-width:54px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal)">Rend.</div>
+  </div>
+  <div class="home-asset-list" id="homeAssetList"></div>
+  <div class="asset-panel-footer">
+    <div style="display:flex;gap:24px;align-items:center;flex:1;flex-wrap:wrap;">
+      <div class="home-param-item">
+        <label>Période</label>
+        <input type="number" id="homePeriodInput" value="2" step="1" min="1" max="10" onchange="syncAllParams('period',this.value)"/>
+        <span style="font-size:0.7rem;color:var(--muted2)">ans</span>
+        <input type="range" id="homePeriodRange" min="1" max="10" value="2" step="1" oninput="syncAllParams('period',this.value)"/>
+      </div>
+      <div class="home-param-item">
+        <label>Taux s/risque</label>
+        <input type="number" id="homeRfInput" value="3.00" step="0.01" onchange="syncAllParams('rf',this.value)"/>
+        <span style="font-size:0.7rem;color:var(--muted2)">%</span>
+        <input type="range" id="homeRfRange" min="0" max="10" value="3" step="0.1" oninput="syncAllParams('rf',this.value)"/>
+      </div>
+      <div class="home-param-item">
+        <label>Monte Carlo</label>
+        <input type="number" id="homeSimInput" value="6000" step="500" onchange="syncAllParams('sim',this.value)"/>
+        <input type="range" id="homeSimRange" min="1000" max="15000" value="6000" step="500" oninput="syncAllParams('sim',this.value)"/>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+      <div class="home-selected-count">Sélectionnés : <strong id="homeSelectedCount">0</strong> actifs</div>
+      <button class="btn-run-home" id="btnRunHome" onclick="closeAssetPanel();runOptimization()">Calculer →</button>
+    </div>
+  </div>
+</div>
+<div class="asset-panel-backdrop" id="assetPanelBackdrop" onclick="closeAssetPanel()"></div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title" style="font-size:1.55rem;line-height:1.2;background:linear-gradient(135deg,#1e3a5f 0%,#3466a0 50%,#1a5c52 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">OPES</div>
+      <button class="sidebar-collapse-btn" onclick="collapseSidebar()" title="Réduire">✕</button>
+    </div>
+    <div class="sidebar-sticky">
+      <div class="sidebar-section-toggle" onclick="toggleAssetSection()">
+        <div class="section-label" style="margin:0">Sélection des actifs</div>
+        <span class="sidebar-section-arrow open" id="assetArrow">▶</span>
+      </div>
+      <div class="sidebar-collapsible" id="assetCollapsible" style="max-height:500px">
+        <div class="search-wrap">
+          <input class="search-input" id="assetSearch" type="text" placeholder="Rechercher un actif…" oninput="filterAssets(this.value)"/>
+          <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+        </div>
+        <div class="selected-count" style="display:flex;align-items:center;justify-content:space-between;padding-bottom:6px;"><span>Sélectionnés : <span id="selectedCount">0</span> actifs</span><button onclick="resetSelection()" title="Tout désélectionner" style="background:none;border:none;font-size:0.68rem;color:var(--blue);cursor:pointer;line-height:1.6;transition:color .15s;text-decoration:underline;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Réinitialiser</button></div>
+        <div id="filterPanelSticky"></div>
+      </div>
+    </div>
+    <div class="sidebar-body" id="assetBodySection">
+      <div id="assetList"></div>
+    </div>
+    <div class="sidebar-expanded-view" id="sidebarExpandedView">
+      <div style="padding:8px 32px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div class="search-wrap" style="margin-bottom:0">
+          <input class="search-input" id="sidebarExpandSearch" type="text" placeholder="Rechercher un actif…" oninput="filterHomeAssets(this.value)"/>
+          <button class="search-clear" id="sidebarExpandClear" onclick="this.classList.remove('visible');document.getElementById('sidebarExpandSearch').value='';renderHomeAssetList('');">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;padding:5px 32px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;gap:10px;">
+        <div style="width:14px;flex-shrink:0;"></div>
+        <div style="flex:1;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Actif</div>
+        <div style="min-width:54px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;text-transform:uppercase;color:var(--teal)">Rend.</div>
+        <div style="min-width:54px;text-align:right;flex-shrink:0;font-size:0.58rem;font-weight:700;text-transform:uppercase;color:var(--amber)">Vol.</div>
+      </div>
+      <div class="home-asset-list" id="homeAssetListSidebar" style="flex:1;overflow-y:auto;"></div>
+    </div>
+    <div class="sidebar-params" id="paramsSection">
+      <div style="padding:0 20px">
+        <div class="sidebar-section-toggle" onclick="toggleParamsSection()">
+          <div class="section-label" style="margin:0">Paramètres</div>
+          <span class="sidebar-section-arrow" id="paramsArrow">▶</span>
+        </div>
+        <div class="sidebar-collapsible" id="paramsCollapsible" style="max-height:0;overflow:hidden">
+          <div class="param-row">
+            <div class="param-label" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Période historique</span>
+              <input type="number" id="periodInput" value="2" step="1" min="1" max="10"
+                style="width:52px;text-align:right;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:0.8rem;font-family:var(--font-sans);color:var(--ink);background:var(--surface);"
+                onchange="syncAllParams('period',this.value)"/> <span style="font-size:0.75rem;color:var(--muted2);margin-left:2px;">ans</span>
+            </div>
+            <input type="range" id="periodRange" min="1" max="10" value="2" step="1" oninput="syncAllParams('period',this.value)"/>
+          </div>
+          <div class="param-row">
+            <div class="param-label" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Taux sans risque</span>
+              <span style="display:flex;align-items:center;gap:2px;">
+                <input type="number" id="rfInput" value="3.00" step="0.01"
+                  style="width:52px;text-align:right;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:0.8rem;font-family:var(--font-sans);color:var(--ink);background:var(--surface);"
+                  onchange="syncRfFromInput(this.value)"/> <span style="font-size:0.75rem;color:var(--muted2);">%</span>
+              </span>
+            </div>
+            <input type="range" id="rfRange" min="0" max="10" value="3" step="0.1"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-run" id="btnRun" onclick="runOptimization()">Calculer</button>
+    </div>
+  </aside>
+
+  <button class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="expandSidebar()" title="Voir tous les actifs">▶</button>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="tab-btn active" onclick="switchTab('frontier',this)">Analyse</button>
+      <button class="tab-btn" onclick="switchTab('cml',this)">CML interactive</button>
+      <button class="tab-btn" onclick="switchTab('risk',this)">Niveaux de risque</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <button class="panel-nav-btn" id="btnArticles" onclick="openFullPanel('articles')">Articles</button>
+        <button class="panel-nav-btn" id="btnPortefeuilles" onclick="openFullPanel('portefeuilles'); loadMyPortfolios();">Mes portefeuilles</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <div class="kpi-bar" id="kpiBar" style="display:none">
+        <div class="kpi-card blue"><div class="kpi-label">Rendement — Tangent</div><div class="kpi-value blue" id="kpiRet">—</div></div>
+        <div class="kpi-card amber"><div class="kpi-label">Volatilité — Tangent</div><div class="kpi-value amber" id="kpiVol">—</div></div>
+        <div class="kpi-card teal"><div class="kpi-label">Ratio de Sharpe max.</div><div class="kpi-value teal" id="kpiSharpe">—</div></div>
+        <div class="kpi-card rose"><div class="kpi-label">Actifs analysés</div><div class="kpi-value rose" id="kpiAssets">—</div></div>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">◈</div>
+        <div class="empty-title">Aucun portefeuille calculé</div>
+        <div class="empty-sub">Sélectionnez au moins 2 actifs, puis cliquez sur « Calculer »</div>
+      </div>
+
+      <div class="tab-content active" id="tab-frontier">
+        <div class="chart-card" id="frontierCard" style="display:none">
+          <div class="chart-header">
+            <span class="chart-title">Frontière efficiente de Markowitz</span>
+            <span class="chart-subtitle">Simulation Monte Carlo</span>
+          </div>
+          <div class="chart-with-legend">
+            <div class="chart-area"><div id="frontierChart" style="height:500px;"></div></div>
+            <div class="chart-legend" id="frontierLegend"><div class="legend-title">Légende</div></div>
+          </div>
+        </div>
+        <div class="chart-card" id="perfCard" style="display:none;margin-top:0">
+          <div class="chart-header"><span class="chart-title">Performances individuelles</span></div>
+          <div style="overflow-x:auto;padding:4px 0;"><table class="perf-table" id="perfTable"></table></div>
+        </div>
+        <div class="chart-card" id="corrCard" style="display:none;margin-top:0">
+          <div class="chart-header"><span class="chart-title">Matrice de corrélation</span></div>
+          <div style="overflow-x:auto;padding:14px;"><div id="corrMatrix"></div></div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-cml">
+        <div class="chart-card" id="cmlCard" style="display:none">
+          <div class="chart-header">
+            <span class="chart-title">Capital Market Line</span>
+            <span class="chart-subtitle">Point déplaçable</span>
+          </div>
+          <div class="cml-controls">
+            <div class="cml-instruction">Cliquez et glissez le point sur le graphique pour ajuster votre exposition.</div>
+            <div class="cml-mix-bar">
+              <div class="cml-mix-rf" id="mixBarRf" style="width:0%"></div>
+              <div class="cml-mix-tangent" id="mixBarTangent" style="width:100%"></div>
+              <div class="cml-mix-leverage" id="mixBarLev" style="width:0%;display:none"></div>
+            </div>
+            <div class="cml-mix-labels">
+              <span class="mix-label-rf">Cash : <strong id="mixRfPct">0 %</strong></span>
+              <span class="mix-label-tangent">Portefeuille tangent : <strong id="mixTangentPct">100 %</strong></span>
+              <span class="mix-label-leverage" id="leverageLabel" style="display:none">Levier : <strong id="mixLeveragePct">0 %</strong></span>
+            </div>
+            <div class="mix-kpis">
+              <div class="mix-kpi" id="cml-kpi-ret" style="cursor:default">
+                <div class="mix-kpi-label">Rendement</div>
+                <div style="display:flex;align-items:center;gap:4px;margin-top:2px">
+                  <input class="mix-kpi-value" id="mixRetInp" type="text" inputmode="decimal"
+                    style="color:var(--teal);min-width:52px;width:72px;background:none;border:none;border-bottom:1px solid var(--border);outline:none;font-family:var(--font-serif);font-size:1.05rem;font-weight:700;padding:0"
+                    onblur="setCMLFromRet(this.value)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();setCMLFromRet(this.value);this.blur();}"/>
+                  <span style="font-size:0.78rem;color:var(--teal)">%</span>
+                  <div class="cml-stepper">
+                    <button class="cml-stepper-btn" id="retUp"   onmousedown="startCMLStep('ret',+0.1)" onmouseup="stopCMLStep()" onmouseleave="stopCMLStep()">▲</button>
+                    <button class="cml-stepper-btn" id="retDown" onmousedown="startCMLStep('ret',-0.1)" onmouseup="stopCMLStep()" onmouseleave="stopCMLStep()">▼</button>
+                  </div>
+                </div>
+              </div>
+              <div class="mix-kpi" id="cml-kpi-vol" style="cursor:default">
+                <div class="mix-kpi-label">Volatilité</div>
+                <div style="display:flex;align-items:center;gap:4px;margin-top:2px">
+                  <input class="mix-kpi-value" id="mixVolInp" type="text" inputmode="decimal"
+                    style="color:var(--amber);min-width:52px;width:72px;background:none;border:none;border-bottom:1px solid var(--border);outline:none;font-family:var(--font-serif);font-size:1.05rem;font-weight:700;padding:0"
+                    onblur="setCMLFromVol(this.value)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();setCMLFromVol(this.value);this.blur();}"/>
+                  <span style="font-size:0.78rem;color:var(--amber)">%</span>
+                  <div class="cml-stepper">
+                    <button class="cml-stepper-btn" id="volUp"   onmousedown="startCMLStep('vol',+0.1)" onmouseup="stopCMLStep()" onmouseleave="stopCMLStep()">▲</button>
+                    <button class="cml-stepper-btn" id="volDown" onmousedown="startCMLStep('vol',-0.1)" onmouseup="stopCMLStep()" onmouseleave="stopCMLStep()">▼</button>
+                  </div>
+                </div>
+              </div>
+              <div class="mix-kpi">
+                <div class="mix-kpi-label">Sharpe</div>
+                <div class="mix-kpi-value" id="mixSharpe" style="color:var(--blue)">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-with-legend">
+            <div class="chart-area"><div id="cmlChart" style="height:440px;"></div></div>
+            <div class="chart-legend" id="cmlLegend"><div class="legend-title">Légende</div></div>
+          </div>
+          <div style="padding:18px 20px;border-top:1px solid var(--border);">
+            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">Composition du portefeuille total</div>
+            <div class="two-col">
+              <div id="cmlAllocTable"></div>
+              <div id="cmlPieChart" style="height:260px;"></div>
+            </div>
+          </div>
+          <div style="margin-top:18px;text-align:center;padding:0 20px 20px">
+            <button onclick="showCMLDiagnostic()" style="font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:none;border:1.5px dashed var(--border2);border-radius:6px;padding:9px 22px;cursor:pointer;color:var(--ink2);transition:all 0.15s">Diagnostic CML</button>
+          </div>
+          <div id="cmlDiagResult" style="display:none;padding:0 20px 20px"></div>
+          <div style="padding:16px 20px 20px;border-top:1px solid var(--border);text-align:center">
+            <button data-src="cml" onclick="openSavePortfolio(this.dataset.src)" style="font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:var(--blue);color:white;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;transition:background 0.15s;">◈ Enregistrer le portefeuille</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-risk">
+        <div id="riskCard" style="display:none">
+          <div class="risk-tabs" id="riskTabs"></div>
+          <div class="two-col" id="riskContent"></div>
+          <div style="margin-top:18px;display:flex;gap:16px;align-items:flex-start">
+            <div style="flex:1">
+              <div style="text-align:center">
+                <button id="riskDiagBtn" onclick="showRiskDiagnostic()" style="font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:none;border:1.5px dashed var(--border2);border-radius:6px;padding:9px 22px;cursor:pointer;width:100%;color:var(--ink2);transition:all 0.15s">Diagnostic du portefeuille</button>
+              </div>
+              <div id="riskDiagResult" style="display:none;margin-top:12px"></div>
+            </div>
+            <div style="flex:1">
+              <div style="text-align:center">
+                <button id="etfEquivBtn" onclick="computeETFEquivalent()" style="font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:none;border:1.5px dashed var(--border2);border-radius:6px;padding:9px 22px;cursor:pointer;width:100%;color:var(--ink2);transition:all 0.15s">Composition ETF équivalent</button>
+              </div>
+              <div id="etfEquivResult" style="display:none;margin-top:12px"></div>
+            </div>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+            <button data-src="risk" onclick="openSavePortfolio(this.dataset.src)" style="font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:var(--blue);color:white;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;transition:background 0.15s;">◈ Enregistrer le portefeuille</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<input type="number" id="simInput" value="6000" style="display:none" aria-hidden="true"/>
+<input type="range"  id="simRange" min="1000" max="15000" value="6000" step="500" style="display:none" aria-hidden="true"/>
+
+<div class="fullscreen-panel" id="panelArticles">
+  <div class="fullscreen-panel-header">
+    <div style="display:flex;align-items:center">
+      <span class="fullscreen-panel-logo">OPES</span>
+      <span class="fullscreen-panel-title">Articles</span>
+    </div>
+    <div class="fullscreen-panel-actions">
+      <button class="fullscreen-panel-close" onclick="closeFullPanel('articles')" title="Fermer">✕</button>
+    </div>
+  </div>
+  <div class="fullscreen-panel-body">
+    <div id="articlesGrid" style="max-width:900px;margin:40px auto;padding:0 32px">
+      <div style="font-family:var(--font-serif);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:8px">Analyses &amp; Concepts</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:36px">Explorez nos articles pour mieux comprendre les fondements de la finance quantitative.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
+        <button onclick="openArticle(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📐</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Théorie</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le MEDAF</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Comprendre le prix du risque et la relation fondamentale entre rendement attendu et risque systématique.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">6 min</span>
+            <span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(2)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📡</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Mesure du risque</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Bêta (β)</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Mesurer la sensibilité d'un actif aux mouvements du marché. L'outil central du risque systématique.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span>
+            <span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(3)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#8a5a00,#c4820a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔬</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Théorie avancée</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">L'APT</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Quand le risque vient de partout : la théorie multi-facteurs qui généralise le MEDAF.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">7 min</span>
+            <span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+      </div>
+    </div>
+    <div id="articleReader" style="display:none;max-width:860px;margin:0 auto;padding:0 32px 60px">
+      <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s">← Retour aux articles</button>
+      <div id="articleContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="fullscreen-panel" id="panelPortefeuilles">
+  <div class="fullscreen-panel-header">
+    <div style="display:flex;align-items:center">
+      <span class="fullscreen-panel-logo">OPES</span>
+      <span class="fullscreen-panel-title">Mes portefeuilles</span>
+    </div>
+    <div class="fullscreen-panel-actions">
+      <button class="fullscreen-panel-close" onclick="closeFullPanel('portefeuilles')" title="Fermer">✕</button>
+    </div>
+  </div>
+  <div class="fullscreen-panel-body">
+    <div id="myPortfoliosList" style="max-width:800px;margin:0 auto;padding:20px;"></div>
+  </div>
+</div>
+
+<button class="contact-fab" id="contactFab" onclick="openContact()" title="Contact" aria-label="Nous contacter">✉</button>
+
+<div class="popup-overlay" id="contactPopup" onclick="if(event.target===this)closeContact()">
+  <div class="popup-box" id="contactBox">
+    <button class="popup-close" onclick="closeContact()" title="Fermer">✕</button>
+    <div class="contact-popup-header">
+      <div class="contact-popup-title">Nous contacter</div>
+      <div class="contact-popup-sub">Pour toute question ou suggestion, écrivez-nous directement.</div>
+    </div>
+    <div class="contact-popup-body">
+      <a class="contact-mail-block" href="#" id="contactMailLink">
+        <div class="contact-mail-icon">✉️</div>
+        <div>
+          <div class="contact-mail-label">Email</div>
+          <div class="contact-mail-addr" id="contactMailAddr"></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="profile-wrap" id="profileWrap">
+  <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
+  <div class="profile-dropdown" id="profileDropdown">
+    <div class="profile-dd-header">
+      <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
+      <div style="min-width:0">
+        <div class="profile-dd-name" id="profileDdName">Chargement…</div>
+        <div class="profile-dd-email" id="profileDdEmail"></div>
+      </div>
+    </div>
+    <div class="profile-dd-tabs">
+      <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
+      <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
+    </div>
+    <div class="profile-dd-pane active" id="pane-settings">
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Langue</span>
+        <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Devise</span>
+        <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
+          <option value="eur">EUR €</option>
+          <option value="usd">USD $</option>
+          <option value="gbp">GBP £</option>
+          <option value="chf">CHF ₣</option>
+        </select>
+      </div>
+      <div class="profile-sim-row">
+        <div class="profile-sim-label">
+          <span class="profile-setting-label">Simulations Monte Carlo</span>
+          <span class="profile-sim-val" id="profileSimVal">6 000</span>
+        </div>
+        <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
+      </div>
+    </div>
+    <div class="profile-dd-pane" id="pane-account">
+      <div class="profile-section-label">Abonnement</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
+        <span class="profile-plan-badge">✦ Pro</span>
+        <span style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
+      </div>
+      <div class="profile-section-label">Informations</div>
+      <div id="profileDisplayMode">
+        <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
+        <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
+        <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
+        <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
+        <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
+      </div>
+      <div id="profileEditMode" style="display:none;margin-top:10px;">
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
+          <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Nom</span>
+          <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
+          <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
+          <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
+        <div style="display:flex;gap:10px;margin-top:15px;">
+          <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
+          <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="popup-overlay" id="savePortfolioPopup" onclick="if(event.target===this)closeSavePortfolio()">
+  <div class="popup-box" style="max-width:380px;width:90%">
+    <button class="popup-close" onclick="closeSavePortfolio()" title="Fermer">✕</button>
+    <div style="padding:28px 28px 24px">
+      <div style="font-family:var(--font-serif);font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:6px">Enregistrer le portefeuille</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:18px">Donnez un nom à ce portefeuille pour le retrouver facilement.</div>
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Nom du portefeuille</label>
+        <input id="savePortfolioName" type="text" placeholder="Ex. Portefeuille PEA"
+          style="width:100%;padding:10px 13px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.85rem;color:var(--ink);outline:none;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')confirmSavePortfolio()"/>
+      </div>
+      <button onclick="confirmSavePortfolio()" style="width:100%;padding:11px;background:var(--blue);color:white;border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;transition:background 0.15s;">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="popup-overlay hidden" id="detailsPortfolioPopup" onclick="if(event.target===this)closePortfolioDetails()">
+  <div class="popup-box" style="max-width:480px;width:90%">
+    <button class="popup-close" onclick="closePortfolioDetails()" title="Fermer">✕</button>
+    <div style="padding:28px">
+      <div style="font-family:var(--font-serif);font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:6px">Archive du portefeuille</div>
+      <div id="detailsPfName" style="font-size:0.9rem;color:var(--blue);font-weight:600;margin-bottom:20px"></div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border2);">
+            <th style="padding:8px 0;text-align:left;font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;">Actif</th>
+            <th style="padding:8px 0;text-align:right;font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;">Poids d'origine</th>
+          </tr>
+        </thead>
+        <tbody id="detailsPfBody"></tbody>
+      </table>
+      <div style="font-size:0.75rem;color:var(--muted);background:var(--surface2);padding:12px;border-radius:6px;margin-bottom:20px;line-height:1.5;">
+        <strong>Note :</strong> Ces pourcentages correspondent à la configuration exacte lors de la sauvegarde.
+      </div>
+      <button id="btnDetailsApply" style="width:100%;padding:12px;background:var(--blue);color:white;border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.8rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;transition:background 0.15s;">Calculer les poids actuels conseillés ➔</button>
+    </div>
+  </div>
+</div>
+
+<!-- JS modules -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/optimization.js"></script>
+<script src="js/charts/frontier.js"></script>
+<script src="js/charts/cml.js"></script>
+<script src="js/charts/risk.js"></script>
+<script src="js/charts/correlation.js"></script>
+<script src="js/panels/articles.js"></script>
+<script src="js/panels/portfolios.js"></script>
+<script src="js/data/articles.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

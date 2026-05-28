@@ -1,0 +1,122 @@
+/* ── BOUTON CONTACT FAB ── */
+.contact-fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 510;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--blue);
+  border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(30,58,95,0.28);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
+  color: white; font-size: 1.1rem;
+}
+.contact-fab:hover {
+  background: var(--blue-lt);
+  box-shadow: 0 6px 22px rgba(30,58,95,0.38);
+  transform: scale(1.07);
+}
+.contact-fab:active { transform: scale(0.97); }
+/* Tooltip */
+.contact-fab::before {
+  content: 'Contact';
+  position: absolute; right: calc(100% + 10px);
+  background: var(--ink); color: white;
+  font-family: var(--font-sans); font-size: 0.68rem; font-weight: 600;
+  padding: 4px 9px; border-radius: 5px; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s;
+}
+.contact-fab:hover::before { opacity: 1; }
+
+/* ── POPUP CONTACT ── */
+.popup-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,23,20,0.35);
+  display: none; align-items: center; justify-content: center;
+  z-index: 530; backdrop-filter: blur(3px);
+}
+.popup-overlay.active { display: flex; }
+.popup-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0; max-width: 340px; width: 90%;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  position: relative; overflow: hidden;
+  animation: popupIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.popup-close {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: 1px solid var(--border); border-radius: 5px;
+  width: 26px; height: 26px; font-size: 0.8rem; color: var(--muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; font-family: var(--font-sans);
+}
+.popup-close:hover { border-color: var(--rose-lt); color: var(--rose-lt); }
+
+/* En-tête popup */
+.contact-popup-header {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.contact-popup-title {
+  font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700;
+  color: var(--ink); margin-bottom: 4px;
+}
+.contact-popup-sub {
+  font-size: 0.72rem; color: var(--muted); line-height: 1.5;
+}
+
+/* Corps popup */
+.contact-popup-body {
+  padding: 20px 24px 24px;
+}
+.contact-mail-block {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 16px;
+  text-decoration: none; transition: all 0.15s;
+}
+.contact-mail-block:hover {
+  border-color: var(--blue-lt);
+  background: rgba(30,58,95,0.04);
+}
+.contact-mail-icon {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.contact-mail-label {
+  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+}
+.contact-mail-addr {
+  font-family: var(--font-sans); font-size: 0.82rem;
+  font-weight: 600; color: var(--blue);
+}
+
+/* Anciennes classes conservées pour compat avec le script obfusqué */
+.popup-title { font-family: var(--font-serif); font-size: 1rem; font-weight: 700; margin-bottom: 10px; color: var(--ink); }
+.popup-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.popup-mail { display: inline-block; font-size: 0.88rem; font-weight: 600; color: var(--blue); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: border-color 0.15s; }
+.popup-mail:hover { border-color: var(--blue); }
+
+/* Search bar */
+.search-wrap { position: relative; margin-bottom: 6px; }
+.search-input {
+  width: 100%; padding: 7px 30px 7px 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 5px; font-family: var(--font-sans);
+  font-size: 0.78rem; color: var(--ink); outline: none;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: var(--blue-lt); background: var(--surface); }
+.search-input::placeholder { color: var(--muted2); }
+.search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted2); cursor: pointer;
+  font-size: 0.75rem; display: none; line-height: 1;
+}
+.search-clear.visible { display: block; }

@@ -1,0 +1,136 @@
+/* ── PROFILE AVATAR ── */
+.profile-wrap {
+  position: fixed; top: 8px; right: 32px; align-self: center; flex-shrink: 0;
+  z-index: 510;
+}
+.profile-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+  border: 2px solid var(--border); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-sans); font-size: 0.75rem; font-weight: 700;
+  color: white; transition: all 0.18s; user-select: none;
+  flex-shrink: 0;
+}
+.profile-avatar:hover { border-color: var(--blue-lt); box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
+.profile-avatar.active { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,58,95,0.18); }
+
+/* Dropdown profil */
+.profile-dropdown {
+  position: absolute; right: 0; top: calc(100% + 10px);
+  width: 260px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(26,23,20,0.13);
+  z-index: 520; overflow: hidden;
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.profile-dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+.profile-dd-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.profile-dd-avatar-lg {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif); font-size: 0.9rem; font-weight: 700; color: white;
+}
+.profile-dd-name {
+  font-family: var(--font-serif); font-size: 0.88rem; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-dd-email {
+  font-size: 0.62rem; color: var(--muted2); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Onglets du dropdown */
+.profile-dd-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.profile-dd-tab {
+  flex: 1; padding: 8px 4px; background: none; border: none;
+  font-family: var(--font-sans); font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.profile-dd-tab:hover { color: var(--ink2); }
+.profile-dd-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* Contenu des onglets */
+.profile-dd-pane { display: none; padding: 14px 16px 16px; }
+.profile-dd-pane.active { display: block; }
+
+/* Séparateur de section */
+.profile-section-label {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted2); margin: 14px 0 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.profile-section-label:first-child { margin-top: 0; }
+
+/* Onglet Paramètres */
+.profile-setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 0; font-size: 0.75rem; color: var(--ink2);
+  border-bottom: 1px solid var(--surface2);
+}
+.profile-setting-row:last-of-type { border-bottom: none; }
+.profile-setting-label { font-weight: 500; }
+
+/* Select inline */
+.profile-select {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  padding: 3px 6px; font-size: 0.70rem; font-family: var(--font-sans);
+  color: var(--ink2); cursor: pointer; outline: none;
+}
+.profile-select:focus { border-color: var(--blue-lt); }
+
+/* Curseur simulations */
+.profile-sim-row { padding: 8px 0 2px; }
+.profile-sim-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--ink2); font-weight: 500; margin-bottom: 6px; }
+.profile-sim-val { color: var(--blue); font-weight: 700; font-family: var(--font-serif); font-size: 0.82rem; }
+
+/* Bouton déconnexion */
+.profile-logout-btn {
+  width: 100%; padding: 9px 12px; margin-top: 14px;
+  background: none; border: 1px solid var(--border2); border-radius: 6px;
+  font-family: var(--font-sans); font-size: 0.75rem; font-weight: 600;
+  color: var(--rose); cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+}
+.profile-logout-btn:hover { background: rgba(122,31,46,0.06); border-color: var(--rose-lt); }
+
+/* Onglet Compte */
+.profile-info-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 6px 0; font-size: 0.75rem; color: var(--ink2);
+  border-bottom: 1px solid var(--surface2);
+}
+.profile-info-row:last-of-type { border-bottom: none; }
+.profile-info-key { color: var(--muted); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; min-width: 80px; padding-top: 1px; }
+.profile-info-val { font-weight: 500; text-align: right; word-break: break-all; }
+
+/* Badge abonnement */
+.profile-plan-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+  color: white; font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Bouton reset password */
+.profile-reset-btn {
+  width: 100%; padding: 8px 12px; margin-top: 14px;
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  font-family: var(--font-sans); font-size: 0.73rem; font-weight: 500;
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 7px; justify-content: center;
+}
+.profile-reset-btn:hover { border-color: var(--blue-lt); color: var(--blue); }
+.profile-reset-success { font-size: 0.70rem; color: var(--teal); text-align: center; margin-top: 8px; display: none; }

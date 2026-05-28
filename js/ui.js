@@ -9,12 +9,12 @@ function expandSidebar() {
   sb.getBoundingClientRect();
   sb.classList.add('expanded');
   if (btn) btn.style.left = '100vw';
-  if (typeof renderHomeAssetList === 'function') renderHomeAssetList('', 'homeAssetListSidebar');
+  if (typeof renderHomeAssetList === 'function') renderHomeAssetList('');
   if (typeof updateHomeCount === 'function') updateHomeCount();
   setTimeout(() => {
     const s = document.getElementById('sidebarExpandSearch');
     if (s) s.focus();
-    preloadVisibleCharts();
+    if (typeof preloadVisibleCharts === 'function') preloadVisibleCharts();
   }, 460);
 }
 
@@ -28,18 +28,6 @@ function collapseSidebar() {
   if (s) s.value = '';
   document.getElementById('sidebarExpandClear')?.classList.remove('visible');
   document.querySelectorAll('.home-asset-chart.open').forEach(c => c.classList.remove('open'));
-}
-
-function preloadVisibleCharts() {
-  if (!window.ASSETS_DATA) return;
-  (window.selectedAssets || []).forEach(ticker => {
-    const chartDiv = document.getElementById('homeChart_' + ticker + '_sb');
-    if (chartDiv && !chartDiv.classList.contains('open')) {
-      chartDiv.classList.add('open');
-      const cat = window.ASSETS_DATA.find(c => c.items.some(i => i.ticker === ticker));
-      if (cat) renderHomeChart(ticker, '', cat.color, '_sb');
-    }
-  });
 }
 
 document.addEventListener('keydown', function(e) {

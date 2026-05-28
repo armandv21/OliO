@@ -9,7 +9,7 @@ function expandSidebar() {
   sb.getBoundingClientRect();
   sb.classList.add('expanded');
   if (btn) btn.style.left = '100vw';
-  if (typeof renderHomeAssetList === 'function') renderHomeAssetList('');
+  if (typeof renderHomeAssetList === 'function') renderHomeAssetList('', 'homeAssetListSidebar');
   if (typeof updateHomeCount === 'function') updateHomeCount();
   setTimeout(() => {
     const s = document.getElementById('sidebarExpandSearch');

@@ -1,9 +1,6 @@
-// ── Données actifs & Panneau Actifs ────────────────────────────────────────────────
-// Requires: config.js, optimization.js (appState, API_URL)
+// ── Données actifs & Panneau Actifs ──────────────────────────────────────────
+// Requires: config.js (window.supabaseClient)
 
-// ═══════════════════════════════════════════════════
-// ASSETS_DATA + PANNEAU ACTIFS
-// ═══════════════════════════════════════════════════
 window.ASSETS_DATA = [
   { name:'Actions américaines', color:'#1e3a5f', items:[
     {name:'Apple',ticker:'AAPL',isin:'US0378331005',labels:['Tech','Hardware']},
@@ -66,44 +63,30 @@ window.ASSETS_DATA = [
     {name:'Robotique (BOTZ)',ticker:'BOTZ',isin:'US9220428588',labels:['ETF','IA']},
     {name:'Or (IAU)',ticker:'IAU',isin:'US4642851053',labels:['ETF']},
     {name:'Immobilier (VNQ)',ticker:'VNQ',isin:'US9229085538',labels:['ETF']},
-    {name:'Obligations 20 ans (TLT)',ticker:'TLT',isin:'US4642874576',labels:['ETF']},
+    {name:'Obligations 20 ans (TLT)',ticker:'TLT',isin:'US4642874329',labels:['ETF']},
     {name:'Obligations corp. (LQD)',ticker:'LQD',isin:'US4642876233',labels:['ETF']},
-    {name:'Santé (XLV)',ticker:'XLV',isin:'US81369Y6059',labels:['ETF','Santé']},
-    {name:'Technologie (XLK)',ticker:'XLK',isin:'US81369Y7059',labels:['ETF','Tech']},
-    {name:'Énergie (XLE)',ticker:'XLE',isin:'US81369Y4058',labels:['ETF','Énergie']},
-    {name:'Énergie propre (ICLN)',ticker:'ICLN',isin:'US46429B1017',labels:['ETF','Green']}
+    {name:'Santé (XLV)',ticker:'XLV',isin:'US81369Y8030',labels:['ETF','Santé']},
+    {name:'Technologie (XLK)',ticker:'XLK',isin:'US81369Y6030',labels:['ETF','Tech']},
+    {name:'Énergie (XLE)',ticker:'XLE',isin:'US81369Y2026',labels:['ETF','Éner.']},
+    {name:'Énergie propre (ICLN)',ticker:'ICLN',isin:'IE00B1XNHC34',labels:['ETF','Green']}
   ]}
 ];
 
-// Get Supabase prices (cached)
-async function getPricesFromSupabase(tickers, period) {
-  try {
-    const { data, error } = await window.supabaseClient
-      .from('prix_actifs')
-      .select('ticker, date, close')
-      .in('ticker', tickers)
-      .order('date', { ascending: true });
-    if (error || !data) return null;
-    const result = {};
-    for (const row of data) {
-      if (!result[row.ticker]) result[row.ticker] = [];
-      result[row.ticker].push({ t: new Date(row.date).getTime() / 1000, p: row.close });
-    }
-    return result;
-  } catch(e) { return null; }
-}
+// ── Panneau actifs ────────────────────────────────────────────────────────────
 
 function openAssetPanel() {
   document.getElementById('assetPanel').classList.add('open');
   document.getElementById('assetPanelBackdrop').classList.add('open');
+  renderHomeAssetList('');
+  updateHomeCount();
 }
-
 function closeAssetPanel() {
   document.getElementById('assetPanel').classList.remove('open');
   document.getElementById('assetPanelBackdrop').classList.remove('open');
 }
 
-// Sync paramètres panneau ↔ sidebar
+// ── Sync paramètres panneau ↔ sidebar ────────────────────────────────────────
+
 function syncAllParams(type, val) {
   val = parseFloat(val);
   if (type === 'period') {
@@ -113,305 +96,336 @@ function syncAllParams(type, val) {
     document.getElementById('periodRange').value = val;
     window.assetStatsCache = {};
     window._statsCachePeriod = null;
-    if (typeof appState !== 'undefined') { appState.period = val + 'y'; }
+    const _openInfo = [];
+    document.querySelectorAll('.home-asset-chart.open').forEach(c => {
+      const m = c.id.match(/^homeChart_(.+?)(_sb)?$/);
+      if (m) _openInfo.push({ id: c.id, ticker: m[1], suffix: m[2] || '' });
+      c.classList.remove('open');
+      const inner = document.getElementById('homeChartInner_' + (m ? m[1] + (m[2]||'') : ''));
+      if (inner) inner.innerHTML = '';
+    });
+    _triggerStatsLoad();
+    _openInfo.forEach(({ id, ticker, suffix }) => {
+      const chartDiv = document.getElementById(id);
+      if (!chartDiv) return;
+      chartDiv.classList.add('open');
+      const cat = window.ASSETS_DATA && window.ASSETS_DATA.find(c => c.items.some(i => i.ticker === ticker));
+      renderHomeChart(ticker, '', cat ? cat.color : '#888', suffix);
+    });
   } else if (type === 'rf') {
-    document.getElementById('homeRfInput').value = val;
+    const fval = isNaN(val) ? val : parseFloat(val).toFixed(2);
+    document.getElementById('homeRfInput').value = fval;
     document.getElementById('homeRfRange').value = val;
-    document.getElementById('rfInput').value = val;
+    document.getElementById('rfInput').value = fval;
     document.getElementById('rfRange').value = val;
-    if (typeof appState !== 'undefined') { appState.rf = val / 100; }
+    if (typeof syncRfFromInput === 'function') syncRfFromInput(val);
+    window.assetStatsCache = {};
+    window._statsCachePeriod = null;
+    _triggerStatsLoad();
   } else if (type === 'sim') {
     document.getElementById('homeSimInput').value = val;
     document.getElementById('homeSimRange').value = val;
-    document.getElementById('simInput').value = val;
-    document.getElementById('simRange').value = val;
+    const si = document.getElementById('simInput'); if (si) si.value = val;
+    const sr = document.getElementById('simRange'); if (sr) sr.value = val;
     const pv = document.getElementById('profileSimVal');
     if (pv) pv.textContent = val.toLocaleString('fr-FR');
-    if (typeof appState !== 'undefined') { appState.nSim = val; }
   }
 }
+
+// ── Toggle log/linéaire ───────────────────────────────────────────────────────
+
+window._homeChartLogScale = false;
+window.homeToggleLogScale = function() {
+  window._homeChartLogScale = !window._homeChartLogScale;
+  const isLog = window._homeChartLogScale;
+  const linBtn = document.getElementById('homeLogBtn_lin');
+  const logBtn = document.getElementById('homeLogBtn_log');
+  if (linBtn) { linBtn.style.background = isLog ? 'none' : 'var(--blue)'; linBtn.style.color = isLog ? 'var(--blue)' : 'white'; }
+  if (logBtn) { logBtn.style.background = isLog ? 'var(--blue)' : 'none'; logBtn.style.color = isLog ? 'white' : 'var(--blue)'; }
+  document.querySelectorAll('.home-asset-chart.open').forEach(c => {
+    const m = c.id.match(/^homeChart_(.+?)(_sb)?$/);
+    if (!m) return;
+    const ticker = m[1], suffix = m[2] || '';
+    const cat = window.ASSETS_DATA && window.ASSETS_DATA.find(e => e.items.some(i => i.ticker === ticker));
+    renderHomeChart(ticker, '', cat ? cat.color : '#888', suffix);
+  });
+};
+
+// ── Stats cache & loader (Supabase stock_prices) ──────────────────────────────
 
 window.assetStatsCache = {};
 window._statsCachePeriod = null;
+let _statsLoadTimer = null;
+let _statsLoadRunning = false;
 
-// Lazy stats loading
-let _triggerStatsTimer = null;
 function _triggerStatsLoad() {
-  clearTimeout(_triggerStatsTimer);
-  _triggerStatsTimer = setTimeout(() => _loadAllStats(), 800);
+  if (_statsLoadTimer) clearTimeout(_statsLoadTimer);
+  _statsLoadTimer = setTimeout(_loadAllStats, 400);
 }
 
 async function _loadAllStats() {
-  const period = document.getElementById('homePeriodInput')?.value || '2';
-  const periodStr = period + 'y';
-  if (window._statsCachePeriod === periodStr && Object.keys(window.assetStatsCache).length > 0) return;
-  window.assetStatsCache = {};
-  window._statsCachePeriod = periodStr;
-  
-  const allTickers = [];
-  for (const cat of window.ASSETS_DATA) {
-    for (const item of cat.items) allTickers.push(item.ticker);
+  if (_statsLoadRunning) return;
+  _statsLoadRunning = true;
+  const period = parseFloat(document.getElementById('homePeriodInput')?.value || 2);
+  const rf     = parseFloat(document.getElementById('homeRfInput')?.value  || 3) / 100;
+  const daysNeeded = Math.round(period * 252);
+
+  const toFetch = [];
+  (window.ASSETS_DATA || []).forEach(cat => cat.items.forEach(item => {
+    if (!window.assetStatsCache[item.ticker]) toFetch.push(item.ticker);
+  }));
+
+  const CHUNK = 4;
+  for (let i = 0; i < toFetch.length; i += CHUNK) {
+    await Promise.all(toFetch.slice(i, i + CHUNK).map(async ticker => {
+      try {
+        const prices = await _fetchPricesForStats(ticker, daysNeeded);
+        if (!prices || prices.length < 12) return;
+        const rets = [];
+        for (let j = 1; j < prices.length; j++) {
+          if (prices[j] > 0 && prices[j-1] > 0)
+            rets.push((prices[j] - prices[j-1]) / prices[j-1]);
+        }
+        if (rets.length < 4) return;
+        const n = rets.length;
+        const meanR = rets.reduce((s,v) => s+v, 0) / n;
+        const varR  = rets.reduce((s,v) => s + (v-meanR)**2, 0) / (n-1);
+        const annRet = meanR * 252 * 100;
+        const annVol = Math.sqrt(varR * 252) * 100;
+        const sharpe = annVol > 0 ? (annRet/100 - rf) / (annVol/100) : 0;
+        window.assetStatsCache[ticker] = { ret: annRet, vol: annVol, sharpe };
+        _updateStatRow(ticker, window.assetStatsCache[ticker]);
+      } catch(e) { /* silencieux */ }
+    }));
   }
-  
-  // Fetch in batches of 8
-  const BATCH = 8;
-  for (let i = 0; i < allTickers.length; i += BATCH) {
-    const batch = allTickers.slice(i, i + BATCH);
-    await _fetchPricesForStats(batch, periodStr);
-  }
+  _statsLoadRunning = false;
 }
 
-async function _fetchPricesForStats(tickers, period) {
+async function _fetchPricesForStats(ticker, daysNeeded) {
   try {
-    const API_URL = window.CONFIG ? window.CONFIG.API_URL : 'https://app-backend-k9i5.onrender.com';
-    const resp = await fetch(API_URL + '/prices', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ tickers, period }),
-      signal: AbortSignal.timeout(30000)
-    });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (!data.prices) return;
-    for (const [ticker, prices] of Object.entries(data.prices)) {
-      if (prices && prices.length > 10) {
-        const ps = prices.map(p => typeof p === 'object' ? p.p : p).filter(p => p > 0);
-        if (ps.length > 2) {
-          // Compute annualized return and volatility
-          const rets = [];
-          for (let i = 1; i < ps.length; i++) rets.push((ps[i] - ps[i-1]) / ps[i-1]);
-          const mean = rets.reduce((s,v)=>s+v,0)/rets.length;
-          const variance = rets.reduce((s,v)=>s+(v-mean)**2,0)/(rets.length-1);
-          const annRet = mean * 52;
-          const annVol = Math.sqrt(variance * 52);
-          const perf = (ps[ps.length-1] - ps[0]) / ps[0];
-          window.assetStatsCache[ticker] = { annRet, annVol, perf, prices: ps };
-          _updateStatRow(ticker);
-        }
-      }
-    }
-  } catch(e) { /* silent */ }
-}
+    const { data, error } = await window.supabaseClient
+      .from('stock_prices')
+      .select('close_price')
+      .eq('ticker', ticker)
+      .order('price_date', { ascending: true });
 
-function _updateStatRow(ticker) {
-  const stat = window.assetStatsCache[ticker];
-  if (!stat) return;
-  // Update stat in home asset rows
-  const rows = document.querySelectorAll('.home-asset-row[data-ticker="' + ticker + '"]');
-  rows.forEach(row => {
-    const statEl = row.querySelector('.har-stat-val');
-    if (statEl) {
-      const perf = stat.perf * 100;
-      statEl.textContent = (perf >= 0 ? '+' : '') + perf.toFixed(1) + '%';
-      statEl.style.color = perf >= 0 ? 'var(--teal)' : 'var(--rose)';
-    }
-  });
-}
+    if (error || !data || data.length === 0) return null;
 
-let _homeChartLogScale = false;
-function homeToggleLogScale(btn) {
-  _homeChartLogScale = !_homeChartLogScale;
-  if (btn) btn.classList.toggle('active', _homeChartLogScale);
-  // Re-render all open charts
-  document.querySelectorAll('.home-asset-chart.open').forEach(chartDiv => {
-    const ticker = chartDiv.dataset.ticker;
-    const suffix = chartDiv.id.includes('_sb') ? '_sb' : '';
-    if (ticker) {
-      const cat = window.ASSETS_DATA.find(c => c.items.some(i => i.ticker === ticker));
-      if (cat) renderHomeChart(ticker, '', cat.color, suffix);
-    }
-  });
-}
+    const dailyPrices = data
+      .map(row => parseFloat(row.close_price))
+      .filter(p => p != null && p > 0);
 
-function renderHomeAssetList(query, containerId) {
-  const cid = containerId || 'homeAssetList';
-  const container = document.getElementById(cid);
-  if (!container) return;
-  _renderIntoContainer(container, query, cid.includes('sb') ? '_sb' : '');
-}
-
-function _renderIntoContainer(container, query, suffix) {
-  const q = (query || '').trim().toLowerCase();
-  container.innerHTML = '';
-  
-  for (const cat of window.ASSETS_DATA) {
-    const filteredItems = cat.items.filter(item => {
-      if (!q) return true;
-      return item.name.toLowerCase().includes(q) || item.ticker.toLowerCase().includes(q);
-    });
-    if (filteredItems.length === 0) continue;
-    
-    // Category header
-    const header = document.createElement('div');
-    header.className = 'asset-category-header';
-    header.style.cssText = 'border-left: 3px solid ' + cat.color;
-    header.innerHTML = '<span>' + cat.name + '</span><span class="cat-arrow">▼</span>';
-    header.onclick = function() {
-      header.classList.toggle('collapsed');
-      const items = header.nextElementSibling;
-      if (items) items.style.display = header.classList.contains('collapsed') ? 'none' : '';
-    };
-    container.appendChild(header);
-    
-    const itemsDiv = document.createElement('div');
-    for (const item of filteredItems) {
-      const row = document.createElement('div');
-      row.className = 'home-asset-row';
-      row.dataset.ticker = item.ticker;
-      
-      const isSelected = (window.selectedAssets || []).includes(item.ticker);
-      if (isSelected) row.classList.add('selected');
-      
-      row.innerHTML = '<div class="har-check"><input type="checkbox" ' + (isSelected ? 'checked' : '') + '></div>' +
-        '<div class="har-name"><div class="har-name-main">' + item.name + '</div><div class="har-name-ticker">' + item.ticker + '</div></div>' +
-        '<div class="har-labels">' + (item.labels || []).map(l => '<span class="sector-tag">' + l + '</span>').join('') + '</div>' +
-        '<div class="har-stat"><div class="har-stat-val" style="color:var(--muted2)">…</div></div>';
-      
-      const cb = row.querySelector('input[type=checkbox]');
-      cb.addEventListener('change', (e) => {
-        e.stopPropagation();
-        homeToggleAsset(item.ticker, cb.checked, row);
-      });
-      row.addEventListener('click', (e) => {
-        if (e.target === cb) return;
-        const chartDiv = document.getElementById('homeChart_' + item.ticker + suffix);
-        if (chartDiv) {
-          const isOpen = chartDiv.classList.contains('open');
-          chartDiv.classList.toggle('open', !isOpen);
-          if (!isOpen && !chartDiv.dataset.loaded) {
-            renderHomeChart(item.ticker, '', cat.color, suffix);
-            chartDiv.dataset.loaded = '1';
-          }
-        }
-      });
-      
-      itemsDiv.appendChild(row);
-      
-      // Chart div
-      const chartDiv = document.createElement('div');
-      chartDiv.className = 'home-asset-chart';
-      chartDiv.id = 'homeChart_' + item.ticker + suffix;
-      chartDiv.dataset.ticker = item.ticker;
-      chartDiv.innerHTML = '<div class="home-asset-chart-header"><span>' + item.name + '</span><span class="home-asset-chart-perf"></span></div><div class="home-asset-chart-inner" id="homeChartInner_' + item.ticker + suffix + '"></div>';
-      itemsDiv.appendChild(chartDiv);
-      
-      // Update stat if cached
-      if (window.assetStatsCache[item.ticker]) _updateStatRow(item.ticker);
-    }
-    container.appendChild(itemsDiv);
+    return dailyPrices.slice(-daysNeeded);
+  } catch(e) {
+    return null;
   }
+}
+
+function _updateStatRow(ticker, stats) {
+  ['', '_sb'].forEach(sfx => {
+    const volCell = document.getElementById('hs-vol-' + ticker + sfx);
+    const retCell = document.getElementById('hs-ret-' + ticker + sfx);
+    if (volCell) volCell.innerHTML = '<span style="font-family:var(--font-serif);font-size:0.80rem;font-weight:600;color:var(--amber)">' + stats.vol.toFixed(1) + '%</span>';
+    if (retCell) {
+      const pos = stats.ret >= 0;
+      retCell.innerHTML = '<span style="font-family:var(--font-serif);font-size:0.80rem;font-weight:600;color:' + (pos ? 'var(--teal)' : 'var(--rose)') + '">' + (pos ? '+' : '') + stats.ret.toFixed(1) + '%</span>';
+    }
+  });
+}
+
+// ── Render liste actifs (double container) ────────────────────────────────────
+
+function renderHomeAssetList(filterText) {
+  _renderIntoContainer(document.getElementById('homeAssetList'), filterText, '');
+  _renderIntoContainer(document.getElementById('homeAssetListSidebar'), filterText, '_sb');
   _triggerStatsLoad();
 }
 
-async function renderHomeChart(ticker, period, color, suffix) {
-  const divId = 'homeChartInner_' + ticker + (suffix || '');
-  const div = document.getElementById(divId);
-  if (!div) return;
-  
-  const stat = window.assetStatsCache[ticker];
-  if (!stat || !stat.prices) {
-    div.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.75rem">Chargement...</div>';
-    return;
-  }
-  
-  const prices = stat.prices;
-  const n = prices.length;
-  const xs = Array.from({length:n}, (_,i) => i);
-  const perf = (prices[n-1] - prices[0]) / prices[0];
-  const lineColor = perf >= 0 ? '#1a5c52' : '#7a1f2e';
-  
-  // Update perf in header
-  const perfEl = div.parentElement?.querySelector('.home-asset-chart-perf');
-  if (perfEl) {
-    perfEl.textContent = (perf >= 0 ? '+' : '') + (perf*100).toFixed(1) + '%';
-    perfEl.style.color = lineColor;
-  }
-  
-  const layout = {
-    paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-    margin: {l:0,r:0,t:0,b:0},
-    showlegend: false,
-    xaxis: {visible:false, fixedrange:true},
-    yaxis: {
-      visible:false, fixedrange:true,
-      type: _homeChartLogScale ? 'log' : 'linear'
-    }
-  };
-  
-  Plotly.react(div, [{
-    x: xs, y: prices, mode:'lines', type:'scatter',
-    line: {color: lineColor, width: 1.5},
-    fill: 'tozeroy',
-    fillcolor: lineColor.replace(')', ',0.08)').replace('rgb','rgba'),
-    hovertemplate: '%{y:.2f}<extra></extra>'
-  }], layout, {responsive:true, displayModeBar:false});
+function _renderIntoContainer(container, filterText, suffix) {
+  if (!container || !window.ASSETS_DATA) return;
+  container.innerHTML = '';
+  const filter = (filterText || '').toLowerCase();
+  window.ASSETS_DATA.forEach(cat => {
+    const catItems = cat.items.filter(item =>
+      !filter || item.name.toLowerCase().includes(filter)
+      || item.ticker.toLowerCase().includes(filter)
+      || (item.isin || '').toLowerCase().includes(filter)
+    );
+    if (!catItems.length) return;
+    const catKey = cat.name.replace(/ /g, '_');
+    const catHeader = document.createElement('div');
+    catHeader.className = 'asset-category-header';
+    catHeader.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + cat.color + ';flex-shrink:0;display:inline-block;"></span>' + cat.name + '<span class="cat-arrow">▼</span>';
+    catHeader.onclick = function() {
+      this.classList.toggle('collapsed');
+      document.querySelectorAll('[id^="homeCatBody_' + catKey + '"]').forEach(b => {
+        b.style.display = this.classList.contains('collapsed') ? 'none' : '';
+      });
+    };
+    container.appendChild(catHeader);
+    const catBody = document.createElement('div');
+    catBody.id = 'homeCatBody_' + catKey + suffix;
+    container.appendChild(catBody);
+    catItems.forEach(item => {
+      const isSelected = (window.selectedAssets || []).includes(item.ticker);
+      const cached = window.assetStatsCache && window.assetStatsCache[item.ticker];
+      const dash = '<span style="color:var(--muted2);font-size:0.75rem">—</span>';
+      const volHtml = cached ? '<span style="font-family:var(--font-serif);font-size:0.80rem;font-weight:600;color:var(--amber)">' + cached.vol.toFixed(1) + '%</span>' : dash;
+      const retHtml = cached ? '<span style="font-family:var(--font-serif);font-size:0.80rem;font-weight:600;color:' + (cached.ret >= 0 ? 'var(--teal)' : 'var(--rose)') + '">' + (cached.ret >= 0 ? '+' : '') + cached.ret.toFixed(1) + '%</span>' : dash;
+      const row = document.createElement('div');
+      row.className = 'home-asset-row' + (isSelected ? ' selected' : '');
+      row.id = 'homeRow_' + item.ticker + suffix;
+      row.innerHTML =
+        '<div class="har-check"><input type="checkbox"' + (isSelected ? ' checked' : '') + ' onclick="event.stopPropagation();homeToggleAsset(\'' + item.ticker + '\',this.checked)"/></div>' +
+        '<div class="har-name">' +
+          '<div class="har-name-main">' + item.name + '</div>' +
+          '<div class="har-name-ticker">' + item.ticker + (item.isin ? '<span style="margin-left:6px;font-family:monospace;letter-spacing:0.01em;color:var(--muted2);font-size:0.58rem;">' + item.isin + '</span>' : '') + '</div>' +
+        '</div>' +
+        '<div class="har-stat" id="hs-ret-' + item.ticker + suffix + '">' + retHtml + '</div>' +
+        '<div class="har-stat" id="hs-vol-' + item.ticker + suffix + '">' + volHtml + '</div>';
+      row.onclick = function(e) {
+        if (e.target.type === 'checkbox') return;
+        const cid = 'homeChart_' + item.ticker + suffix;
+        const chartDiv = document.getElementById(cid);
+        if (!chartDiv) return;
+        if (chartDiv.classList.contains('open')) {
+          chartDiv.classList.remove('open');
+        } else {
+          chartDiv.classList.add('open');
+          renderHomeChart(item.ticker, item.name, cat.color, suffix);
+        }
+      };
+      catBody.appendChild(row);
+      const chartDiv = document.createElement('div');
+      chartDiv.className = 'home-asset-chart';
+      chartDiv.id = 'homeChart_' + item.ticker + suffix;
+      chartDiv.innerHTML =
+        '<div class="home-asset-chart-header">' +
+          '<span style="color:' + cat.color + ';font-weight:600">' + item.name + ' (' + item.ticker + ')' + (item.isin ? '<span style="margin-left:8px;font-family:monospace;letter-spacing:0.01em;color:var(--muted2);font-size:0.60rem;font-weight:400">' + item.isin + '</span>' : '') + '</span>' +
+        '</div>' +
+        '<div class="home-asset-chart-inner" id="homeChartInner_' + item.ticker + suffix + '"></div>';
+      catBody.appendChild(chartDiv);
+    });
+  });
 }
 
-let selectedAssets = window.selectedAssets || [];
-window.selectedAssets = selectedAssets;
+// ── Render graphe actif (Supabase stock_prices) ───────────────────────────────
 
-function homeToggleAsset(ticker, checked, rowEl) {
-  if (checked) {
-    if (!selectedAssets.includes(ticker)) selectedAssets.push(ticker);
-    if (rowEl) rowEl.classList.add('selected');
-  } else {
-    const idx = selectedAssets.indexOf(ticker);
-    if (idx >= 0) selectedAssets.splice(idx, 1);
-    if (rowEl) rowEl.classList.remove('selected');
+async function renderHomeChart(ticker, name, catColor, suffix) {
+  const sfx = suffix || '';
+  const container = document.getElementById('homeChartInner_' + ticker + sfx);
+  if (!container) return;
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Chargement...</div>';
+
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('stock_prices')
+      .select('price_date, close_price')
+      .eq('ticker', ticker)
+      .order('price_date', { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    const periodValue = parseFloat(document.getElementById('homePeriodInput').value) || 2;
+    const daysToKeep  = Math.round(periodValue * 252);
+    const useLog      = window._homeChartLogScale === true;
+    const tickfmt     = periodValue <= 1 ? '%d/%m/%y' : '%m/%y';
+
+    const filteredData = data.slice(-daysToKeep);
+    const dates  = filteredData.map(d => new Date(d.price_date));
+    const prices = filteredData.map(d => parseFloat(d.close_price));
+
+    const isPos     = prices[prices.length - 1] >= prices[0];
+    const lineColor = isPos ? '#2d8a7a' : '#b03045';
+    const yaxis     = useLog
+      ? { type:'log', showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false }
+      : { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false, tickformat:'.0f' };
+
+    container.innerHTML = '';
+    Plotly.newPlot(container, [{
+      x: dates, y: prices, type:'scatter', mode:'lines',
+      line:      { color: lineColor, width: 1.8 },
+      fill:      useLog ? 'none' : 'tozeroy',
+      fillcolor: isPos ? 'rgba(45,138,122,0.07)' : 'rgba(176,48,69,0.07)',
+      hovertemplate: '%{x|%d/%m/%Y}<br><b>%{y:.2f}</b><extra></extra>'
+    }], {
+      margin:        { t:4, r:16, b:32, l:55 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, tickformat:tickfmt, showline:false, zeroline:false },
+      yaxis,
+      showlegend: false
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.72rem;font-style:italic;">Données indisponibles</div>';
   }
-  // Sync with sidebar selection
-  if (typeof appState !== 'undefined') {
-    appState.selected.clear();
-    selectedAssets.forEach(t => appState.selected.add(t));
+}
+
+// ── Sélection actifs ──────────────────────────────────────────────────────────
+
+window.selectedAssets = window.selectedAssets || [];
+
+function homeToggleAsset(ticker, checked) {
+  if (!window.selectedAssets) window.selectedAssets = [];
+  const cb = document.querySelector('#assetList .asset-item input[type=checkbox][data-ticker="' + ticker + '"]');
+  if (checked && !window.selectedAssets.includes(ticker)) {
+    window.selectedAssets.push(ticker);
+    if (cb) cb.checked = true;
+  } else if (!checked) {
+    window.selectedAssets = window.selectedAssets.filter(t => t !== ticker);
+    if (cb) cb.checked = false;
   }
+  ['', '_sb'].forEach(sfx => {
+    const row = document.getElementById('homeRow_' + ticker + sfx);
+    if (row) {
+      row.classList.toggle('selected', checked);
+      const rowCb = row.querySelector('input[type=checkbox]');
+      if (rowCb) rowCb.checked = checked;
+    }
+  });
   updateHomeCount();
+  if (typeof updateSidebarCount === 'function') updateSidebarCount();
 }
 
 function updateHomeCount() {
-  const countEls = document.querySelectorAll('.home-selected-count strong, #homeSelectedCount');
-  countEls.forEach(el => { el.textContent = selectedAssets.length; });
-  // Enable/disable run button
+  const el = document.getElementById('homeSelectedCount');
+  if (el) el.textContent = (window.selectedAssets || []).length;
   const btn = document.getElementById('btnRunHome');
-  if (btn) btn.disabled = selectedAssets.length < 2;
+  if (btn) btn.disabled = (window.selectedAssets || []).length < 2;
 }
 
-function filterHomeAssets(query) {
-  const clearBtn = document.getElementById('sidebarExpandClear');
-  if (clearBtn) clearBtn.classList.toggle('visible', query.trim().length > 0);
-  renderHomeAssetList(query, 'homeAssetList');
-  renderHomeAssetList(query, 'homeAssetList_sb');
+function filterHomeAssets(val) {
+  document.getElementById('homeSearchClear')?.classList.toggle('visible', val.length > 0);
+  document.getElementById('sidebarExpandClear')?.classList.toggle('visible', val.length > 0);
+  renderHomeAssetList(val);
 }
 
 function clearHomeSearch() {
-  const inp = document.getElementById('sidebarExpandSearch');
-  if (inp) { inp.value = ''; filterHomeAssets(''); inp.focus(); }
-  const clearBtn = document.getElementById('sidebarExpandClear');
-  if (clearBtn) clearBtn.classList.remove('visible');
+  const inp = document.getElementById('homeAssetSearch');
+  if (inp) inp.value = '';
+  document.getElementById('homeSearchClear')?.classList.remove('visible');
+  renderHomeAssetList('');
 }
 
 window.resetSelection = function() {
-  selectedAssets.length = 0;
-  document.querySelectorAll('.home-asset-row').forEach(r => {
-    r.classList.remove('selected');
-    const cb = r.querySelector('input[type=checkbox]');
-    if (cb) cb.checked = false;
+  window.selectedAssets = [];
+  ['', '_sb'].forEach(sfx => {
+    document.querySelectorAll('[id^="homeRow_"]').forEach(r => {
+      if (!sfx || r.id.endsWith(sfx)) {
+        r.classList.remove('selected');
+        const cb = r.querySelector('input[type=checkbox]');
+        if (cb) cb.checked = false;
+      }
+    });
   });
-  if (typeof appState !== 'undefined') appState.selected.clear();
   updateHomeCount();
+  if (typeof updateSidebarCount === 'function') updateSidebarCount();
 };
 
-window.openAssetPanel = openAssetPanel;
-window.closeAssetPanel = closeAssetPanel;
-window.syncAllParams = syncAllParams;
-window.renderHomeAssetList = renderHomeAssetList;
-window.homeToggleAsset = homeToggleAsset;
-window.updateHomeCount = updateHomeCount;
-window.filterHomeAssets = filterHomeAssets;
-window.clearHomeSearch = clearHomeSearch;
-window.homeToggleLogScale = homeToggleLogScale;
 window.preloadVisibleCharts = function() {
   if (!window.ASSETS_DATA) return;
-  (selectedAssets || []).forEach(ticker => {
+  (window.selectedAssets || []).forEach(ticker => {
     const chartDiv = document.getElementById('homeChart_' + ticker + '_sb');
     if (chartDiv && !chartDiv.classList.contains('open')) {
       chartDiv.classList.add('open');
@@ -421,14 +435,12 @@ window.preloadVisibleCharts = function() {
   });
 };
 
-// Init: sync sidebar assets with home panel on load
-;(function() {
-  setTimeout(() => {
-    if (typeof buildSidebar === 'function') {
-      // Patch sidebar asset list to sync with home panel selection
-      const origApply = window.applyFilters;
-      // Also sync resetSelection
-      updateHomeCount();
-    }
-  }, 100);
-})();
+// Expose globally
+window.openAssetPanel = openAssetPanel;
+window.closeAssetPanel = closeAssetPanel;
+window.syncAllParams = syncAllParams;
+window.renderHomeAssetList = renderHomeAssetList;
+window.homeToggleAsset = homeToggleAsset;
+window.updateHomeCount = updateHomeCount;
+window.filterHomeAssets = filterHomeAssets;
+window.clearHomeSearch = clearHomeSearch;

@@ -1,0 +1,49 @@
+/* ── AUTH OVERLAY ── */
+#authOverlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-sans);
+}
+#authOverlay.hidden { display: none !important; }
+.auth-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 44px 40px 36px; width: 340px;
+  box-shadow: 0 8px 32px rgba(30,26,20,0.10);
+  display: flex; flex-direction: column; align-items: center;
+}
+.auth-title {
+  font-family: var(--font-serif); font-size: 1.35rem; font-weight: 700;
+  color: var(--ink); margin-bottom: 30px; text-align: center; line-height: 1.3;
+}
+.auth-field { width: 100%; margin-bottom: 14px; }
+.auth-field label {
+  display: block; font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
+}
+.auth-field input {
+  width: 100%; padding: 10px 13px; background: var(--bg);
+  border: 1px solid var(--border2); border-radius: 6px;
+  font-family: var(--font-sans); font-size: 0.85rem;
+  color: var(--ink); outline: none; transition: border-color 0.15s;
+}
+.auth-field input:focus { border-color: var(--blue-lt); }
+.auth-btn {
+  width: 100%; padding: 11px; background: var(--blue); color: white;
+  border: none; border-radius: 6px; font-family: var(--font-sans);
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; cursor: pointer; transition: background 0.15s; margin-top: 6px;
+}
+.auth-btn:hover { background: var(--blue-lt); }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-error { font-size: 0.75rem; color: var(--rose-lt); text-align: center; margin-top: 10px; min-height: 18px; }
+.auth-spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+  display: inline-block; vertical-align: middle; margin-right: 6px;
+}
+@keyframes authSpin { to { transform: rotate(360deg); } }
+.auth-divider { width: 100%; border: none; border-top: 1px solid var(--border); margin: 22px 0 0; }
+.auth-note { font-size: 0.65rem; color: var(--muted2); text-align: center; margin-top: 12px; line-height: 1.5; }

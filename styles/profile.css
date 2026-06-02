@@ -1,6 +1,9 @@
 /* ── PROFILE AVATAR ── */
 .profile-wrap {
-  position: fixed; top: 8px; right: 32px; align-self: center; flex-shrink: 0;
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  right: calc(32px + env(safe-area-inset-right));
+  align-self: center; flex-shrink: 0;
   z-index: 510;
 }
 .profile-avatar {

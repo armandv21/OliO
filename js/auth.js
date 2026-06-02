@@ -102,20 +102,11 @@ window.doLogin = async function() {
     errDiv.textContent = 'Identifiant ou mot de passe incorrect.';
   } else {
     sessionStorage.setItem('mrkwtz_auth', '1');
+    updateAuthUI(true);
     document.getElementById('authOverlay').classList.add('hidden');
   }
 };
 
-window.doLogout = async function() {
-  await window.supabaseClient.auth.signOut(); 
-  sessionStorage.removeItem('mrkwtz_auth');
-  const overlay = document.getElementById('authOverlay');
-  overlay.classList.remove('hidden');
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('authError').textContent = '';
-  toggleAuthView('login');
-};
 
 document.addEventListener('keydown', function(e) {
   const authOverlay = document.getElementById('authOverlay');
@@ -126,7 +117,54 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+
+// --- GESTION DE L'AFFICHAGE MODALE ---
+window.openAuthModal = function() {
+  document.getElementById('authOverlay').classList.remove('hidden');
+};
+
+window.closeAuthModal = function() {
+  document.getElementById('authOverlay').classList.add('hidden');
+};
+
+// --- GESTION DU MENU HAUT (Bouton Connexion vs Profil) ---
+window.updateAuthUI = function(isLoggedIn) {
+  const loginBtn = document.getElementById('btnTopLogin');
+  const profileWrap = document.getElementById('profileWrap');
+  
+  if (isLoggedIn) {
+    if (loginBtn) loginBtn.style.display = 'none'; // Cache le bouton connexion
+    if (profileWrap) profileWrap.style.display = 'block'; // Affiche le profil
+  } else {
+    if (loginBtn) loginBtn.style.display = 'block'; // Affiche le bouton connexion
+    if (profileWrap) profileWrap.style.display = 'none'; // Cache le profil
+  }
+};
+
+window.doLogout = async function() {
+  await window.supabaseClient.auth.signOut(); 
+  sessionStorage.removeItem('mrkwtz_auth');
+  
+  // On met à jour l'interface (retour au mode gratuit)
+  updateAuthUI(false);
+  
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('authError').textContent = '';
+  toggleAuthView('login');
+  
+  // Optionnel : tu pourrais ajouter un window.location.reload() ici 
+  // si tu veux vider le graphique quand l'utilisateur se déconnecte.
+};
+
+// --- INITIALISATION AU CHARGEMENT ---
 document.addEventListener('DOMContentLoaded', async () => {
     const { data } = await window.supabaseClient.auth.getSession();
-    if (data.session) loadProfileInfo();
+    if (data.session) {
+      sessionStorage.setItem('mrkwtz_auth', '1');
+      updateAuthUI(true); // Passe en mode connecté
+      loadProfileInfo();
+    } else {
+      updateAuthUI(false); // Mode visiteur
+    }
 });

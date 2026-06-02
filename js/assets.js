@@ -1,76 +1,63 @@
 // ── Données actifs & Panneau Actifs ──────────────────────────────────────────
 // Requires: config.js (window.supabaseClient)
 
+// ── 1. Le "squelette" de présentation (Catégories et Couleurs vides) ──
 window.ASSETS_DATA = [
-  { name:'Actions américaines', color:'#1e3a5f', items:[
-    {name:'Apple',ticker:'AAPL',isin:'US0378331005',labels:['Tech','Hardware']},
-    {name:'Microsoft',ticker:'MSFT',isin:'US5949181045',labels:['Cloud','IA']},
-    {name:'Amazon',ticker:'AMZN',isin:'US0231351067',labels:['Cloud','Conso']},
-    {name:'Alphabet',ticker:'GOOGL',isin:'US02079K3059',labels:['Tech','IA']},
-    {name:'NVIDIA',ticker:'NVDA',isin:'US67066G1040',labels:['Semi','IA']},
-    {name:'Meta',ticker:'META',isin:'US30303M1027',labels:['Tech','IA']},
-    {name:'Tesla',ticker:'TSLA',isin:'US88160R1014',labels:['Auto','Green']},
-    {name:'Berkshire B',ticker:'BRK-B',isin:'US0846707026',labels:['Finance']},
-    {name:'JPMorgan',ticker:'JPM',isin:'US46625H1005',labels:['Finance']},
-    {name:'Johnson & Johnson',ticker:'JNJ',isin:'US4781601046',labels:['Santé']},
-    {name:'ExxonMobil',ticker:'XOM',isin:'US30231G1022',labels:['Énergie']},
-    {name:'Visa',ticker:'V',isin:'US92826C8394',labels:['Finance']},
-    {name:'UnitedHealth',ticker:'UNH',isin:'US91324P1021',labels:['Santé']},
-    {name:'Procter & Gamble',ticker:'PG',isin:'US7427181091',labels:['Conso']},
-    {name:'Mastercard',ticker:'MA',isin:'US57636Q1040',labels:['Finance']},
-    {name:'Home Depot',ticker:'HD',isin:'US4370761029',labels:['Conso']},
-    {name:'Chevron',ticker:'CVX',isin:'US1667641005',labels:['Énergie']},
-    {name:'Coca-Cola',ticker:'KO',isin:'US1912161007',labels:['Conso']},
-    {name:'PepsiCo',ticker:'PEP',isin:'US7134481081',labels:['Conso']},
-    {name:'AbbVie',ticker:'ABBV',isin:'US00287Y1091',labels:['Santé']}
-  ]},
-  { name:'CAC 40', color:'#3466a0', items:[
-    {name:'LVMH',ticker:'MC.PA',isin:'FR0000121014',labels:['Luxe']},
-    {name:'TotalEnergies',ticker:'TTE.PA',isin:'FR0014000MR3',labels:['Énergie']},
-    {name:'Hermès',ticker:'RMS.PA',isin:'FR0000052292',labels:['Luxe']},
-    {name:'Airbus',ticker:'AIR.PA',isin:'NL0000235190',labels:['Industrie']},
-    {name:'Schneider Electric',ticker:'SU.PA',isin:'FR0000121972',labels:['Green']},
-    {name:'BNP Paribas',ticker:'BNP.PA',isin:'FR0000131104',labels:['Finance']},
-    {name:'Sanofi',ticker:'SAN.PA',isin:'FR0000120578',labels:['Santé']},
-    {name:"L'Oréal",ticker:'OR.PA',isin:'FR0000120321',labels:['Luxe']},
-    {name:'Kering',ticker:'KER.PA',isin:'FR0000121485',labels:['Luxe']},
-    {name:'Danone',ticker:'BN.PA',isin:'FR0000120644',labels:['Conso']},
-    {name:'Vinci',ticker:'DG.PA',isin:'FR0000125486',labels:['Industrie']}
-  ]},
-  { name:'Actions internationales', color:'#1a5c52', items:[
-    {name:'Toyota',ticker:'TM',isin:'US8923313071',labels:['Auto']},
-    {name:'ASML',ticker:'ASML',isin:'NL0010273215',labels:['Semi','Tech']},
-    {name:'Nestlé',ticker:'NSRGY',isin:'CH0038863350',labels:['Conso']},
-    {name:'Novo Nordisk',ticker:'NVO',isin:'DK0060534915',labels:['Santé']},
-    {name:'HSBC',ticker:'HSBC',isin:'GB0005405286',labels:['Finance']},
-    {name:'Shell',ticker:'SHEL',isin:'GB00BP6MXD84',labels:['Énergie']},
-    {name:'AstraZeneca',ticker:'AZN',isin:'GB0009895292',labels:['Santé']},
-    {name:'SAP',ticker:'SAP',isin:'DE0007164600',labels:['Cloud','Logiciel']},
-    {name:'Siemens',ticker:'SIEGY',isin:'DE0007236101',labels:['Industrie']},
-    {name:'Sony',ticker:'SONY',isin:'JP3435000009',labels:['Tech']},
-    {name:'Nintendo',ticker:'NTDOY',isin:'JP3756600007',labels:['Tech']}
-  ]},
-  { name:'ETF', color:'#8a5a00', items:[
-    {name:'S&P 500 (SPY)',ticker:'SPY',isin:'US78462F1030',labels:['ETF']},
-    {name:'Nasdaq (QQQ)',ticker:'QQQ',isin:'US46090E1038',labels:['ETF','Tech']},
-    {name:'MSCI World (URTH)',ticker:'URTH',isin:'US46434G8473',labels:['ETF']},
-    {name:'Total Market (VTI)',ticker:'VTI',isin:'US9229087690',labels:['ETF']},
-    {name:'Marchés émergents (IEMG)',ticker:'IEMG',isin:'US46434G1031',labels:['ETF']},
-    {name:'Europe (IEV)',ticker:'IEV',isin:'US4642867422',labels:['ETF']},
-    {name:'Dividendes (VIG)',ticker:'VIG',isin:'US9229083228',labels:['ETF']},
-    {name:'Innovation (ARKK)',ticker:'ARKK',isin:'US00214Q1040',labels:['ETF','Tech']},
-    {name:'Japon (EWJ)',ticker:'EWJ',isin:'US4642864007',labels:['ETF']},
-    {name:'Robotique (BOTZ)',ticker:'BOTZ',isin:'US9220428588',labels:['ETF','IA']},
-    {name:'Or (IAU)',ticker:'IAU',isin:'US4642851053',labels:['ETF']},
-    {name:'Immobilier (VNQ)',ticker:'VNQ',isin:'US9229085538',labels:['ETF']},
-    {name:'Obligations 20 ans (TLT)',ticker:'TLT',isin:'US4642874329',labels:['ETF']},
-    {name:'Obligations corp. (LQD)',ticker:'LQD',isin:'US4642876233',labels:['ETF']},
-    {name:'Santé (XLV)',ticker:'XLV',isin:'US81369Y8030',labels:['ETF','Santé']},
-    {name:'Technologie (XLK)',ticker:'XLK',isin:'US81369Y6030',labels:['ETF','Tech']},
-    {name:'Énergie (XLE)',ticker:'XLE',isin:'US81369Y2026',labels:['ETF','Éner.']},
-    {name:'Énergie propre (ICLN)',ticker:'ICLN',isin:'IE00B1XNHC34',labels:['ETF','Green']}
-  ]}
+  { name: 'Actions américaines', color: '#1e3a5f', items: [] },
+  { name: 'CAC 40', color: '#3466a0', items: [] },
+  { name: 'Actions internationales', color: '#1a5c52', items: [] },
+  { name: 'ETF', color: '#8a5a00', items: [] }
 ];
+
+// ── 2. Fonction mathématique pour mélanger un tableau ──
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// ── 3. Charger et répartir aléatoirement les actifs depuis Supabase ──
+window.loadRandomAssetsFromDB = async function() {
+  try {
+    // ⚠️ REMPLACE 'assets' par le VRAI NOM de ta table contenant les infos des entreprises
+    const { data, error } = await window.supabaseClient
+      .from('assets') 
+      .select('ticker, name, isin, categorie'); // ⚠️ Vérifie que les noms de colonnes correspondent
+
+    if (error || !data) throw error;
+
+    // A. On mélange la totalité de ta base de données
+    const shuffledAssets = shuffleArray(data);
+
+    // B. On vide les catégories au cas où on recharge la liste
+    window.ASSETS_DATA.forEach(cat => cat.items = []);
+
+    // C. On distribue les actifs dans les catégories
+    shuffledAssets.forEach(asset => {
+      // On cherche si la catégorie de l'actif correspond à l'une de nos 4 sections
+      const cat = window.ASSETS_DATA.find(c => c.name === asset.categorie);
+      
+      // On limite à 10 actifs par catégorie pour ne pas surcharger le menu (Tu peux changer ce chiffre !)
+      if (cat && cat.items.length < 10) {
+        cat.items.push({
+          name: asset.name,
+          ticker: asset.ticker,
+          isin: asset.isin || ''
+        });
+      }
+    });
+
+    // ── 4. On dessine la liste dans l'onglet de gauche avec ces nouvelles données ──
+    renderHomeAssetList('');
+    if (typeof updateHomeCount === 'function') updateHomeCount();
+
+  } catch (err) {
+    console.error("Erreur lors du chargement des actifs aléatoires :", err);
+  }
+};
+
 
 // ── Panneau actifs ────────────────────────────────────────────────────────────
 

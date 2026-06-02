@@ -2,19 +2,53 @@
 // Ce fichier orchestre le chargement initial et les event listeners top-level.
 // Doit être chargé EN DERNIER (après tous les autres scripts).
 
-// ── Vérification auth (early) ───────────────────────────────────────────────────
-
-(function(){
-  if(sessionStorage.getItem('mrkwtz_auth')==='1'){
-    document.addEventListener('DOMContentLoaded',function(){
-      var o=document.getElementById('authOverlay');
-      if(o) o.classList.add('hidden');
-    });
-  }
-})();
-
-
 // ── Post-traitement visuel Plotly ────────────────────────────────────────────────
+
+async function loadAssetsFromDatabase() {
+  try {
+    console.log("⏳ Chargement des actifs depuis Supabase...");
+    
+    // 1. On utilise le bon nom pour le client Supabase
+    const { data: assets, error } = await window.supabaseClient
+      .from('assets')
+      .select('*');
+
+    if (error) throw error;
+
+    // 2. On s'assure que les catégories sont bien vides avant de les remplir
+    window.ASSETS_DATA.forEach(category => category.items = []);
+
+    // 3. On range chaque actif reçu dans sa bonne catégorie
+    assets.forEach(asset => {
+      const categoryIndex = window.ASSETS_DATA.findIndex(c => c.name === asset.categorie);
+      
+      // On crée l'objet avec la propriété "ticker" (et pas "id") pour ne pas casser ton UI
+      const newAsset = {
+          ticker: asset.ticker,  
+          name: asset.name,      
+          isin: asset.isin,      
+          labels: asset.labels || [] 
+      };
+
+      if (categoryIndex !== -1) {
+        window.ASSETS_DATA[categoryIndex].items.push(newAsset);
+      } else {
+        const fallback = window.ASSETS_DATA.find(c => c.name === 'Nouveaux Actifs');
+        if (fallback) fallback.items.push(newAsset);
+      }
+    });
+
+    console.log("✅ Actifs chargés avec succès :", window.ASSETS_DATA);
+
+    // 4. On dessine le menu et on met à jour le compteur !
+    renderHomeAssetList('');
+    updateHomeCount();
+
+  } catch (err) {
+    console.error("❌ Erreur lors du chargement des actifs :", err.message);
+  }
+}
+
 
 (function() {
   const _react = Plotly.react.bind(Plotly);
@@ -126,3 +160,15 @@ window.closeContact = function() {
   document.getElementById('contactPopup').classList.remove('active');
 };
 document.addEventListener('keydown', function(e) { if(e.key==='Escape') closeContact(); });
+
+// ── Démarrage de l'application ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+    // 1. On aspire les 64 actifs complets de Supabase
+    await loadAssetsFromDatabase();
+    
+    // 2. On dessine les menus avec les cases à cocher
+    renderHomeAssetList('');
+    
+    // 3. On met à jour le petit compteur "0 sélectionné"
+    updateHomeCount();
+});

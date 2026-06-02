@@ -1,32 +1,36 @@
-/* ── RESPONSIVE — viewport mobile & safe areas ── */
+/* ── RESPONSIVE ── */
 
-/* 100dvh : Dynamic Viewport Height (exclut la barre du navigateur) */
-@supports (height: 100dvh) {
-  .app  { height: 100dvh; }
-  body  { min-height: 100dvh; }
-}
+/* ── Safe areas iOS (notch, dynamic island, barre home) ──
+   .app utilise position:fixed inset:0 — il colle au viewport entier.
+   On pousse le CONTENU en dessous des zones système via padding
+   sur les éléments en haut et en bas, pas sur body. ── */
 
-/* iOS safe areas (notch, dynamic island, barre home) */
 @supports (padding-top: env(safe-area-inset-top)) {
-  body {
-    padding-top:    env(safe-area-inset-top);
-    padding-left:   env(safe-area-inset-left);
-    padding-right:  env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
+  /* Barre en haut de l'interface */
+  .topbar {
+    padding-top: env(safe-area-inset-top);
   }
-
+  /* Sidebar header sur mobile quand la sidebar est un drawer */
+  .sidebar-header {
+    padding-top: calc(28px + env(safe-area-inset-top));
+  }
+  /* Avatar profil */
   .profile-wrap {
     top:   calc(8px  + env(safe-area-inset-top));
     right: calc(32px + env(safe-area-inset-right));
   }
-
-  /* Panels plein écran */
-  .asset-panel,
-  .fullscreen-panel {
-    padding-top:    env(safe-area-inset-top);
-    padding-left:   env(safe-area-inset-left);
-    padding-right:  env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
+  /* Panel actifs plein écran */
+  .asset-panel-header {
+    padding-top: calc(22px + env(safe-area-inset-top));
+  }
+  /* Panels fullscreen (Articles, Portefeuilles) */
+  .fullscreen-panel-header {
+    padding-top: calc(16px + env(safe-area-inset-top));
+  }
+  /* Footer / bas d'écran */
+  .asset-panel-footer,
+  .sidebar-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 }
 
@@ -34,20 +38,20 @@
 @media (max-width: 1024px) {
   .sidebar { width: 240px; min-width: 240px; }
   .sidebar-expand-btn { left: 240px; }
-  .topbar { padding: 0 72px 0 24px; }
+  .topbar { padding-left: 24px; padding-right: 72px; }
   .content { padding: 22px 24px; }
   .two-col { gap: 16px; }
 }
 
 /* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  /* Sidebar masquée par défaut, full-width en expanded */
+  /* Sidebar en drawer : cachée à gauche par défaut */
   .sidebar {
-    position: fixed; left: -100%; top: 0; bottom: 0;
-    width: 80vw; min-width: 0;
+    position: fixed;
+    left: -100%; top: 0; bottom: 0;
+    width: 82vw; min-width: 0;
     z-index: 200;
-    transition: left 0.35s cubic-bezier(0.77,0,0.18,1),
-                width 0.35s cubic-bezier(0.77,0,0.18,1);
+    transition: left 0.35s cubic-bezier(0.77,0,0.18,1);
     box-shadow: 4px 0 24px rgba(0,0,0,0.12);
   }
   .sidebar.expanded {
@@ -55,46 +59,52 @@
     width: 100vw; min-width: 100vw;
   }
 
-  /* Bouton expand devient menu burger */
+  /* Bouton expand repositionné */
   .sidebar-expand-btn {
-    left: 12px; top: calc(50% + env(safe-area-inset-top) / 2);
-    border-radius: 6px;
+    left: 10px;
     width: 28px; height: 36px;
+    border-radius: 6px;
   }
 
-  /* Topbar */
+  /* Main occupe toute la largeur */
+  .main { width: 100%; }
+
+  /* Topbar scrollable */
   .topbar {
-    padding: 0 56px 0 52px;
+    padding-left: 48px;
+    padding-right: 52px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
-  .tab-btn { padding: 12px 12px 10px; font-size: 0.70rem; }
+  .topbar::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 12px 10px 10px; font-size: 0.70rem; white-space: nowrap; }
 
-  /* Contenu principal */
+  /* Contenu */
   .content { padding: 16px; }
   .two-col { grid-template-columns: 1fr; gap: 14px; }
 
-  /* KPI bar : scroll horizontal */
-  .kpi-bar { overflow-x: auto; flex-wrap: nowrap; gap: 8px; padding-bottom: 4px; }
+  /* KPI : scroll horizontal */
+  .kpi-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .kpi-card { min-width: 140px; flex-shrink: 0; }
 
-  /* Panels fullscreen */
-  .asset-panel-header { padding: 16px; }
-  .asset-panel-footer { padding: 10px 16px; gap: 10px; }
+  /* Dropdown profil pleine largeur */
+  .profile-dropdown { width: 92vw; right: -2px; }
+
+  /* Charts moins hauts */
+  #frontierChart, #cmlChart { height: 300px !important; }
+
+  /* Panel actifs */
+  .asset-panel-header { padding-left: 16px; padding-right: 16px; }
+  .asset-panel-footer { padding-left: 16px; padding-right: 16px; gap: 10px; }
   .home-param-item input[type=range] { width: 60px; }
-
-  /* Profile dropdown */
-  .profile-dropdown { width: 92vw; right: -4px; }
-
-  /* Charts */
-  #frontierChart,
-  #cmlChart { height: 320px !important; }
 }
 
 /* ── Petit mobile (≤ 480px) ── */
 @media (max-width: 480px) {
-  .topbar { padding: 0 48px 0 48px; }
+  .topbar { padding-left: 44px; padding-right: 44px; }
   .tab-btn { padding: 10px 8px 8px; font-size: 0.65rem; }
-  .content { padding: 12px; }
-  .profile-dropdown { width: 96vw; right: -2px; }
+  .content { padding: 10px; }
+  .profile-dropdown { width: 96vw; right: -1px; }
+  #frontierChart, #cmlChart { height: 260px !important; }
 }

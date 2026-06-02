@@ -1,5 +1,10 @@
 /* ── APP LAYOUT ── */
-.app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; position: relative; }
+.app {
+  display: flex;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
 
 /* MAIN */
 .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: var(--bg); overflow-x: hidden; }

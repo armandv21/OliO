@@ -226,7 +226,7 @@
 
   <button class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="expandSidebar()" title="Voir tous les actifs">▶</button>
 
-  <main class="main">
+  <div class="app-right">
     <div class="topbar">
       <button class="tab-btn active" onclick="switchTab('frontier',this)">Analyse</button>
       <button class="tab-btn" onclick="switchTab('cml',this)">CML interactive</button>
@@ -236,6 +236,7 @@
         <button class="panel-nav-btn" id="btnPortefeuilles" onclick="openFullPanel('portefeuilles'); loadMyPortfolios();">Mes portefeuilles</button>
       </div>
     </div>
+    <main class="main">
     <div class="content">
 
       <div class="kpi-bar" id="kpiBar" style="display:none">
@@ -371,7 +372,8 @@
       </div>
 
     </div>
-  </main>
+    </main>
+  </div>
 </div>
 
 <input type="number" id="simInput" value="6000" style="display:none" aria-hidden="true"/>

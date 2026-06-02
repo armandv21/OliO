@@ -1,39 +1,5 @@
 /* ── RESPONSIVE ── */
 
-/* ── Safe areas iOS (notch, dynamic island, barre home) ──
-   .app utilise position:fixed inset:0 — il colle au viewport entier.
-   On pousse le CONTENU en dessous des zones système via padding
-   sur les éléments en haut et en bas, pas sur body. ── */
-
-@supports (padding-top: env(safe-area-inset-top)) {
-  /* Barre en haut de l'interface */
-  .topbar {
-    padding-top: env(safe-area-inset-top);
-  }
-  /* Sidebar header sur mobile quand la sidebar est un drawer */
-  .sidebar-header {
-    padding-top: calc(28px + env(safe-area-inset-top));
-  }
-  /* Avatar profil */
-  .profile-wrap {
-    top:   calc(8px  + env(safe-area-inset-top));
-    right: calc(32px + env(safe-area-inset-right));
-  }
-  /* Panel actifs plein écran */
-  .asset-panel-header {
-    padding-top: calc(22px + env(safe-area-inset-top));
-  }
-  /* Panels fullscreen (Articles, Portefeuilles) */
-  .fullscreen-panel-header {
-    padding-top: calc(16px + env(safe-area-inset-top));
-  }
-  /* Footer / bas d'écran */
-  .asset-panel-footer,
-  .sidebar-footer {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
-  }
-}
-
 /* ── Tablette (≤ 1024px) ── */
 @media (max-width: 1024px) {
   .sidebar { width: 240px; min-width: 240px; }
@@ -59,17 +25,15 @@
     width: 100vw; min-width: 100vw;
   }
 
-  /* Bouton expand repositionné */
   .sidebar-expand-btn {
     left: 10px;
     width: 28px; height: 36px;
     border-radius: 6px;
   }
 
-  /* Main occupe toute la largeur */
   .main { width: 100%; }
 
-  /* Topbar scrollable */
+  /* Topbar scrollable horizontalement */
   .topbar {
     padding-left: 48px;
     padding-right: 52px;
@@ -80,21 +44,16 @@
   .topbar::-webkit-scrollbar { display: none; }
   .tab-btn { padding: 12px 10px 10px; font-size: 0.70rem; white-space: nowrap; }
 
-  /* Contenu */
   .content { padding: 16px; }
   .two-col { grid-template-columns: 1fr; gap: 14px; }
 
-  /* KPI : scroll horizontal */
   .kpi-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .kpi-card { min-width: 140px; flex-shrink: 0; }
 
-  /* Dropdown profil pleine largeur */
   .profile-dropdown { width: 92vw; right: -2px; }
 
-  /* Charts moins hauts */
   #frontierChart, #cmlChart { height: 300px !important; }
 
-  /* Panel actifs */
   .asset-panel-header { padding-left: 16px; padding-right: 16px; }
   .asset-panel-footer { padding-left: 16px; padding-right: 16px; gap: 10px; }
   .home-param-item input[type=range] { width: 60px; }

@@ -1,5 +1,5 @@
 /* ── APP LAYOUT ── */
-.app { display: flex; height: 100vh; overflow: hidden; position: relative; }
+.app { display: flex; height: 100vh; height: 100dvh; overflow: hidden; position: relative; }
 
 /* MAIN */
 .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: var(--bg); overflow-x: hidden; }

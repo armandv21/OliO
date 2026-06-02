@@ -80,7 +80,7 @@ async function loadProfileInfo() {
     const email = user.email || '';
     const { data: profile } = await window.supabaseClient
       .from('data')
-      .select('pseudo, nom, prenom, date_naissance')
+      .select('pseudo, nom, prenom, date_naissance, abonnement')
       .eq('id', user.id)
       .single();
     _profileData = { ...profile, email };
@@ -114,6 +114,25 @@ function _populateAccountPane(p) {
       setEl('accDate', d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }));
     } catch(e) { setEl('accDate', p.date_naissance); }
   } else { setEl('accDate', '—'); }
+
+  const planDisplay = document.getElementById('accountPlanDisplay');
+  const planSubtext = document.getElementById('accountPlanSubtext');
+  if (planDisplay) {
+    const userPlan = p.abonnement || 'gratuit';
+    if (userPlan === 'premium') {
+      planDisplay.innerHTML = '✦ Premium';
+      planDisplay.style.background = '#b38f4f';
+      if (planSubtext) planSubtext.textContent = 'Accès illimité';
+    } else if (userPlan === 'pro') {
+      planDisplay.innerHTML = '✦ Pro';
+      planDisplay.style.background = 'var(--blue)';
+      if (planSubtext) planSubtext.textContent = 'Accès complet';
+    } else {
+      planDisplay.innerHTML = 'Gratuit';
+      planDisplay.style.background = 'var(--muted)';
+      if (planSubtext) planSubtext.textContent = 'Accès basique';
+    }
+  }
 }
 
 // ── Réinitialisation mot de passe ──
@@ -140,7 +159,7 @@ window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
         const user = session.user;
         const email = user.email || '';
         const { data: profile } = await window.supabaseClient
-          .from('data').select('pseudo, nom, prenom, date_naissance').eq('id', user.id).single();
+          .from('data').select('pseudo, nom, prenom, date_naissance, abonnement').eq('id', user.id).single();
         _profileData = { ...profile, email };
         _applyProfileToUI(_profileData);
         _profileLoaded = true;
@@ -148,6 +167,72 @@ window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }, 400);
   }
 });
+
+window.toggleEditProfile = function() {
+  const displayMode = document.getElementById('profileDisplayMode');
+  const editMode = document.getElementById('profileEditMode');
+  if (!displayMode || !editMode) return;
+
+  if (displayMode.style.display === 'none') {
+    displayMode.style.display = 'block';
+    editMode.style.display = 'none';
+    document.getElementById('editProfileMsg').textContent = '';
+  } else {
+    const currentPseudo = document.getElementById('accPseudo').textContent;
+    const currentNom = document.getElementById('accNom').textContent;
+    const currentPrenom = document.getElementById('accPrenom').textContent;
+    const currentDate = document.getElementById('accDate').textContent;
+    document.getElementById('editPseudo').value = currentPseudo !== '—' ? currentPseudo : '';
+    document.getElementById('editNom').value = currentNom !== '—' ? currentNom : '';
+    document.getElementById('editPrenom').value = currentPrenom !== '—' ? currentPrenom : '';
+    if (currentDate !== '—' && currentDate.includes('/')) {
+      const parts = currentDate.split('/');
+      if (parts.length === 3) document.getElementById('editDate').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    displayMode.style.display = 'none';
+    editMode.style.display = 'block';
+  }
+};
+
+window.saveProfileData = async function() {
+  const msgDiv = document.getElementById('editProfileMsg');
+  msgDiv.style.color = 'var(--muted)';
+  msgDiv.textContent = 'Enregistrement en cours...';
+
+  const newPseudo = document.getElementById('editPseudo').value.trim();
+  const newNom = document.getElementById('editNom').value.trim();
+  const newPrenom = document.getElementById('editPrenom').value.trim();
+  const newDate = document.getElementById('editDate').value;
+
+  try {
+    const { data: { user }, error: userError } = await window.supabaseClient.auth.getUser();
+    if (userError || !user) throw new Error('Utilisateur non connecté.');
+    const { error } = await window.supabaseClient
+      .from('data')
+      .update({ pseudo: newPseudo, nom: newNom, prenom: newPrenom, date_naissance: newDate || null })
+      .eq('id', user.id);
+    if (error) throw error;
+
+    document.getElementById('accPseudo').textContent = newPseudo || '—';
+    document.getElementById('accNom').textContent = newNom || '—';
+    document.getElementById('accPrenom').textContent = newPrenom || '—';
+    if (newDate) {
+      const d = new Date(newDate);
+      document.getElementById('accDate').textContent = d.toLocaleDateString('fr-FR');
+    } else {
+      document.getElementById('accDate').textContent = '—';
+    }
+    if (_profileData) { _profileData.pseudo = newPseudo; _profileData.nom = newNom; _profileData.prenom = newPrenom; }
+    _applyProfileToUI({ ..._profileData, pseudo: newPseudo });
+
+    msgDiv.style.color = 'var(--teal)';
+    msgDiv.textContent = 'Modifications enregistrées avec succès !';
+    setTimeout(() => window.toggleEditProfile(), 1200);
+  } catch(err) {
+    msgDiv.style.color = 'var(--rose-lt)';
+    msgDiv.textContent = 'Erreur lors de la sauvegarde.';
+  }
+};
 
 // Expose globally for HTML onclick
 window.toggleProfileDropdown = toggleProfileDropdown;

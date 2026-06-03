@@ -10,7 +10,7 @@
   function openArticle(id) {
     document.getElementById('articlesGrid').style.display = 'none';
     document.getElementById('articleReader').style.display = 'block';
-    document.getElementById('articleContent').innerHTML = _articleData[id];
+    document.getElementById('articleContent').innerHTML = (window._articleData || _articleData)[id];
     document.querySelector('.fullscreen-panel-body').scrollTop = 0;
   }
   function closeArticle() {

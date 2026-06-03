@@ -101,6 +101,21 @@ window.saveProfileData = async function() {
 let _tempPortfolioData = null;
 
 window.openSavePortfolio = function(source) {
+    // 1. 🛑 VÉRIFICATION PREMIUM
+    // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+    const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
+    
+    if (!isPremium) {
+        const modal = document.getElementById('premiumModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active'); 
+            modal.style.display = '';
+        }
+        return; 
+    }
+
+    // 2. ✅ COMPORTEMENT NORMAL (ce que tu as déjà)
     // 1. Déterminer quel tableau lire (cmlAllocTable ou allocTable)
     let targetId = 'allocTable'; 
     if (source) {

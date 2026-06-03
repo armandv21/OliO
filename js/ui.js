@@ -42,6 +42,23 @@ const _panelMap = {
 };
 
 function openFullPanel(id) {
+  // 1. 🛑 VÉRIFICATION PREMIUM (Articles et Portefeuilles)
+  if (id === 'articles' || id === 'portefeuilles') {
+    // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+    const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
+    
+    if (!isPremium) {
+      const modal = document.getElementById('premiumModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active'); 
+        modal.style.display = '';
+      }
+      return; 
+    }
+  }
+
+  // 2. ✅ COMPORTEMENT NORMAL (Si Premium)
   Object.keys(_panelMap).forEach(k => { if (k !== id) closeFullPanel(k); });
   const { panel, btn } = _panelMap[id];
   document.getElementById(panel).classList.add('open');

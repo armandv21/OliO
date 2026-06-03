@@ -355,7 +355,30 @@ window.selectedAssets = window.selectedAssets || [];
 
 function homeToggleAsset(ticker, checked) {
   if (!window.selectedAssets) window.selectedAssets = [];
+
+  // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+  const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
+
+  // 1. VÉRIFICATION PREMIUM : Si on veut cocher un 4ème actif
+  if (checked && window.selectedAssets.length >= 3 && !window.selectedAssets.includes(ticker) && !isPremium) {
+    
+    const modal = document.getElementById('premiumModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+        modal.style.display = '';
+    }
+    
+    // On force la case à décocher pour que l'interface soit cohérente
+    const cb = document.querySelector('input[type=checkbox][onclick*="' + ticker + '"]');
+    if (cb) cb.checked = false;
+    
+    return; // On arrête l'exécution ici
+  }
+
+  // 2. LOGIQUE NORMALE DE SÉLECTION
   const cb = document.querySelector('#assetList .asset-item input[type=checkbox][data-ticker="' + ticker + '"]');
+  
   if (checked && !window.selectedAssets.includes(ticker)) {
     window.selectedAssets.push(ticker);
     if (cb) cb.checked = true;
@@ -363,6 +386,8 @@ function homeToggleAsset(ticker, checked) {
     window.selectedAssets = window.selectedAssets.filter(t => t !== ticker);
     if (cb) cb.checked = false;
   }
+
+  // 3. MISE À JOUR VISUELLE
   ['', '_sb'].forEach(sfx => {
     const row = document.getElementById('homeRow_' + ticker + sfx);
     if (row) {
@@ -371,6 +396,7 @@ function homeToggleAsset(ticker, checked) {
       if (rowCb) rowCb.checked = checked;
     }
   });
+
   updateHomeCount();
   if (typeof updateSidebarCount === 'function') updateSidebarCount();
 }

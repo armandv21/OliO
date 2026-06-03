@@ -600,6 +600,29 @@
   </div>
 </div>
 
+<div class="popup-overlay hidden" id="premiumModal" onclick="if(event.target===this)closePremiumModal()">
+  <div class="popup-box" style="max-width:420px; width:90%; text-align:center;">
+    <button class="popup-close" onclick="closePremiumModal()" title="Fermer">✕</button>
+    
+    <div style="padding:36px 28px 28px;">
+      <img src="images/logo_olio.png" alt="OliO Logo" style="height: 44px; width: auto; margin: 0 auto 16px; display: block;" />
+      
+      <div style="font-family:var(--font-serif); font-size:1.35rem; font-weight:700; color:var(--ink); margin-bottom:12px;">
+        Passez au Premium
+      </div>
+      
+      <div style="font-family:var(--font-sans); font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:24px;">
+        Vous avez atteint la limite de <strong>3 actifs</strong> de la version gratuite.<br>
+        Débloquez la sélection illimitée pour construire des portefeuilles avancés.
+      </div>
+      
+      <button onclick="window.location.href='/premium'" style="width:100%; padding:12px; background:var(--blue); color:white; border:none; border-radius:6px; font-family:var(--font-sans); font-size:0.8rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+        Découvrir les offres
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- JS modules -->
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>

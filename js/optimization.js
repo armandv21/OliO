@@ -189,7 +189,6 @@ function buildFilterPanel() {
 }
 
 function renderAssetList() {
-  // assetItems lives in assetList (sidebar-body)
   let container = document.getElementById('assetItems');
   if (!container) {
     container = document.createElement('div');
@@ -197,6 +196,7 @@ function renderAssetList() {
     document.getElementById('assetList').appendChild(container);
   }
   container.innerHTML = '';
+  
   for (const [cat, assets] of Object.entries(ASSETS)) {
     for (const [name, ticker] of Object.entries(assets)) {
       const item = document.createElement('label');
@@ -208,11 +208,36 @@ function renderAssetList() {
         '<span style="flex:1;min-width:0;line-height:1.3"><span style="display:block">' + name + '</span>' +
         '<span class="ticker-tag">' + ticker + '</span></span>' +
         '<span style="flex-shrink:0;text-align:right">' + renderTags(ticker) + '</span>';
+      
+// ── GESTION DU CLIC SUR LA CASE À COCHER ──
       item.querySelector('input').addEventListener('change', function(e) {
-        if (e.target.checked) { appState.selected.add(ticker); item.classList.add('selected'); }
-        else { appState.selected.delete(ticker); item.classList.remove('selected'); }
+        
+        // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+        const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
+        
+        if (e.target.checked && appState.selected.size >= 3 && !isPremium) {
+          e.target.checked = false; // On décoche
+          
+          const modal = document.getElementById('premiumModal');
+          if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+            modal.style.display = ''; 
+          }
+          return;
+        }
+
+        // 2. COMPORTEMENT NORMAL (Si Premium ou < 3 actifs)
+        if (e.target.checked) { 
+          appState.selected.add(ticker); 
+          item.classList.add('selected'); 
+        } else { 
+          appState.selected.delete(ticker); 
+          item.classList.remove('selected'); 
+        }
         document.getElementById('selectedCount').textContent = appState.selected.size;
       });
+      
       container.appendChild(item);
     }
   }
@@ -515,7 +540,21 @@ function plotLayout() {
 
 async function runOptimization() {
   const tickers = [...appState.selected];
+  
   if (tickers.length < 2) { alert('Sélectionnez au moins 2 actifs.'); return; }
+  
+  // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+  const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
+  
+  if (tickers.length > 3 && !isPremium) {
+      const modal = document.getElementById('premiumModal');
+      if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('active');
+          modal.style.display = '';
+      }
+      return; 
+  }
   document.getElementById('loadingOverlay').classList.add('active');
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('btnRun').disabled = true;
@@ -1808,6 +1847,13 @@ buildSidebar();
 
 
 // Expose globally for HTML onclick
+window.closePremiumModal = function() {
+  const modal = document.getElementById('premiumModal');
+  if (modal) {
+    modal.classList.remove('active'); // 🌟 On enlève le statut "actif"
+    modal.classList.add('hidden');
+  }
+};
 window.runOptimization = runOptimization;
 window.switchTab = switchTab;
 window.syncPeriodFromInput = syncPeriodFromInput;
@@ -1826,8 +1872,4 @@ window.showRiskDiagnostic = showRiskDiagnostic;
 window.computeETFEquivalent = computeETFEquivalent;
 window.startCMLStep = startCMLStep;
 window.stopCMLStep = stopCMLStep;
-window.renderRiskContent = renderRiskContent;
-window.renderCustomRisk = renderCustomRisk;
-window.startCustomEdit = startCustomEdit;
-window.solveCustom = solveCustom;
 window.portfolioStats = portfolioStats;

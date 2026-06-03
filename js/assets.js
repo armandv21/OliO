@@ -288,9 +288,21 @@ function _renderIntoContainer(container, filterText, suffix) {
       chartDiv.id = 'homeChart_' + item.ticker + suffix;
       chartDiv.innerHTML =
         '<div class="home-asset-chart-header">' +
-          '<span style="color:' + cat.color + ';font-weight:600">' + item.name + ' (' + item.ticker + ')' + (item.isin ? '<span style="margin-left:8px;font-family:monospace;letter-spacing:0.01em;color:var(--muted2);font-size:0.60rem;font-weight:400">' + item.isin + '</span>' : '') + '</span>' +
+          '<span style="color:' + cat.color + ';font-weight:600;font-size:0.68rem">' + item.name + ' (' + item.ticker + ')' + (item.isin ? '<span style="margin-left:6px;font-family:monospace;letter-spacing:0.01em;color:var(--muted2);font-size:0.57rem;font-weight:400">' + item.isin + '</span>' : '') + '</span>' +
         '</div>' +
-        '<div class="home-asset-chart-inner" id="homeChartInner_' + item.ticker + suffix + '"></div>';
+        '<div class="asset-detail-body">' +
+          '<div class="home-asset-chart-inner" id="homeChartInner_' + item.ticker + suffix + '"></div>' +
+          '<div class="asset-kpi-grid" id="assetKpi_' + item.ticker + suffix + '">' +
+            _buildKpiCell('P/E', '—', 'kpi-pe-' + item.ticker + suffix) +
+            _buildKpiCell('Dividende', '—', 'kpi-div-' + item.ticker + suffix) +
+            _buildKpiCell('Bêta', '—', 'kpi-beta-' + item.ticker + suffix) +
+            _buildKpiCell('Cap.', '—', 'kpi-cap-' + item.ticker + suffix) +
+            _buildKpiCell('Marge N.', '—', 'kpi-margin-' + item.ticker + suffix) +
+            '<div class="asset-kpi-cell" style="padding:0">' +
+              '<button class="asset-kpi-open-btn" onclick="event.stopPropagation();openAssetSheet(\'' + item.ticker + '\',\'' + encodeURIComponent(item.name) + '\',\'' + (item.isin || '') + '\')" title="Fiche complète">+</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
       catBody.appendChild(chartDiv);
     });
   });
@@ -420,6 +432,62 @@ function clearHomeSearch() {
   document.getElementById('homeSearchClear')?.classList.remove('visible');
   renderHomeAssetList('');
 }
+
+// ── KPI helpers ───────────────────────────────────────────────────────────────
+
+function _buildKpiCell(label, value, id) {
+  return '<div class="asset-kpi-cell">' +
+    '<div class="asset-kpi-label">' + label + '</div>' +
+    '<div class="asset-kpi-value" id="' + id + '">' + value + '</div>' +
+  '</div>';
+}
+
+// ── Fiche complète actif ──────────────────────────────────────────────────────
+
+const _SHEET_TABS = [
+  { id: 'overview',    label: 'Aperçu'       },
+  { id: 'price',       label: 'Prix'         },
+  { id: 'valuation',   label: 'Valorisation' },
+  { id: 'dividends',   label: 'Dividendes'   },
+  { id: 'financials',  label: 'Finances'     },
+  { id: 'growth',      label: 'Croissance'   },
+  { id: 'profitability',label: 'Rentabilité' },
+  { id: 'health',      label: 'Santé'        },
+  { id: 'dcf',         label: 'DCF'          },
+  { id: 'segments',    label: 'Segments'     },
+];
+
+window.openAssetSheet = function(ticker, encodedName, isin) {
+  const name = decodeURIComponent(encodedName);
+  const overlay = document.getElementById('assetSheetOverlay');
+  if (!overlay) return;
+
+  overlay.querySelector('.asset-sheet-title').textContent = name;
+  overlay.querySelector('.asset-sheet-meta').textContent =
+    ticker + (isin ? ' · ' + isin : '');
+
+  // Reset tabs
+  overlay.querySelectorAll('.asset-sheet-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === 0);
+  });
+  overlay.querySelectorAll('.asset-sheet-pane').forEach((p, i) => {
+    p.classList.toggle('active', i === 0);
+  });
+
+  overlay.classList.add('open');
+};
+
+window.closeAssetSheet = function() {
+  document.getElementById('assetSheetOverlay')?.classList.remove('open');
+};
+
+window.switchAssetSheetTab = function(tabId, btn) {
+  const overlay = document.getElementById('assetSheetOverlay');
+  overlay.querySelectorAll('.asset-sheet-tab').forEach(t => t.classList.remove('active'));
+  overlay.querySelectorAll('.asset-sheet-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  overlay.querySelector('#assetPane-' + tabId)?.classList.add('active');
+};
 
 window.resetSelection = function() {
   window.selectedAssets = [];

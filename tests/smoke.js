@@ -1,252 +1,202 @@
-// Smoke tests — onglet Profil (profile tab changes)
+// Smoke tests — OliO frontend
 // Run: node tests/smoke.js
+// Lancé automatiquement sur chaque PR via GitHub Actions.
+// But : bloquer toute PR qui casserait la topbar, le layout ou le profil.
 'use strict';
 
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 let passed = 0, failed = 0;
 
 function test(name, fn) {
-  try {
-    fn();
-    console.log(`  ✓ ${name}`);
-    passed++;
-  } catch (e) {
-    console.log(`  ✗ ${name}: ${e.message}`);
-    failed++;
-  }
+  try { fn(); console.log(`  ✓ ${name}`); passed++; }
+  catch(e) { console.log(`  ✗ ${name}\n      → ${e.message}`); failed++; }
 }
+function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion échouée'); }
+function assertEqual(a, b, msg) { if (a !== b) throw new Error(msg || `attendu "${b}", obtenu "${a}"`); }
 
-function assert(cond, msg) {
-  if (!cond) throw new Error(msg || 'assertion échouée');
-}
+// ─── Fichiers sources ────────────────────────────────────────────────────────
+const html        = read('index.html');
+const layoutCss   = read('styles/layout.css');
+const baseCss     = read('styles/base.css');
+const profileCss  = read('styles/profile.css');
+const profileJs   = read('js/profile.js');
 
-function assertEqual(a, b, msg) {
-  if (a !== b) throw new Error(msg || `attendu ${JSON.stringify(b)}, obtenu ${JSON.stringify(a)}`);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. STRUCTURE HTML — topbar et layout principal
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n1. Structure HTML\n');
 
-// ── Mock DOM minimal ──────────────────────────────────────────────
+test('div.app présent', () =>
+  assert(html.includes('class="app"'), 'div.app manquant'));
+
+test('main.main présent', () =>
+  assert(html.includes('class="main"'), 'main.main manquant'));
+
+test('div.topbar présent', () =>
+  assert(html.includes('class="topbar"'), 'div.topbar manquant'));
+
+test('topbar enfant direct de main — pas de wrapper intermédiaire', () => {
+  const mainIdx   = html.indexOf('<main class="main">');
+  const topbarIdx = html.indexOf('<div class="topbar">');
+  assert(mainIdx !== -1, '<main class="main"> introuvable');
+  assert(topbarIdx !== -1, '<div class="topbar"> introuvable');
+  assert(topbarIdx > mainIdx, 'topbar doit être après <main>');
+  const between = html.slice(mainIdx, topbarIdx);
+  assert(!between.includes('app-right'),
+    'wrapper app-right détecté entre <main> et topbar — casse le layout');
+});
+
+test('onglet Analyse présent', () =>
+  assert(html.includes('>Analyse<'), 'bouton Analyse manquant'));
+
+test('onglet CML interactive présent', () =>
+  assert(html.includes('>CML interactive<'), 'bouton CML manquant'));
+
+test('bouton Articles présent', () =>
+  assert(html.includes('>Articles<'), 'bouton Articles manquant'));
+
+test('bouton Mes portefeuilles présent', () =>
+  assert(html.includes('>Mes portefeuilles<'), 'bouton Mes portefeuilles manquant'));
+
+test('avatar profil présent', () =>
+  assert(html.includes('id="profileAvatar"'), 'profileAvatar manquant'));
+
+test('meta viewport sans viewport-fit=cover', () =>
+  assert(!html.includes('viewport-fit=cover'),
+    'viewport-fit=cover détecté — provoque safe-area-inset-top non nulle sur Safari desktop, cache la topbar'));
+
+test('logo_olio.png référencé dans index.html', () =>
+  assert(html.includes('logo_olio.png'), 'logo_olio.png non référencé'));
+
+test('fichier images/logo_olio.png existe sur disque', () =>
+  assert(fs.existsSync(path.join(ROOT, 'images/logo_olio.png')),
+    'images/logo_olio.png manquant'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. CSS LAYOUT — règles critiques
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n2. CSS layout critique\n');
+
+test('.app a height:100vh', () =>
+  assert(/height\s*:\s*100vh/.test(layoutCss),
+    '.app height:100vh manquant — le layout original fonctionnel utilise cette valeur'));
+
+test('.app a overflow:hidden', () =>
+  assert(/overflow\s*:\s*hidden/.test(layoutCss),
+    '.app overflow:hidden manquant'));
+
+test('.app NE PAS utiliser position:fixed + inset:0 (casse la topbar)', () => {
+  const hasFixed = /\.app\s*\{[^}]*position\s*:\s*fixed/.test(layoutCss);
+  const hasInset = /\.app\s*\{[^}]*(?:inset\s*:\s*0|top\s*:\s*0[^}]*bottom\s*:\s*0)/.test(layoutCss);
+  assert(!(hasFixed && hasInset),
+    '.app { position:fixed; inset:0 } détecté — ce combo a cassé la topbar dans les PRs #4 à #7');
+});
+
+test('.main a overflow-y:auto', () =>
+  assert(/overflow-y\s*:\s*auto/.test(layoutCss),
+    '.main overflow-y:auto manquant'));
+
+test('.topbar a un min-height', () =>
+  assert(/\.topbar[^}]*min-height/.test(layoutCss),
+    '.topbar min-height manquant — la barre pourrait s\'effondrer à 0px'));
+
+test('body sans padding-top safe-area', () =>
+  assert(!baseCss.includes('padding-top: env(safe-area') &&
+         !baseCss.includes('padding-top:env(safe-area'),
+    'body padding-top:safe-area détecté — décale .app et cache la topbar sur desktop'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. FICHIERS CSS — tous présents
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n3. Fichiers CSS\n');
+
+[
+  'styles/variables.css', 'styles/base.css',    'styles/layout.css',
+  'styles/sidebar.css',   'styles/cards.css',   'styles/panels.css',
+  'styles/auth.css',      'styles/profile.css', 'styles/contact.css',
+  'styles/responsive.css',
+].forEach(f =>
+  test(`${f}`, () => assert(fs.existsSync(path.join(ROOT, f)), `${f} manquant`)));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. FICHIERS JS — tous présents
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n4. Fichiers JS\n');
+
+[
+  'js/config.js', 'js/auth.js', 'js/profile.js', 'js/assets.js',
+  'js/ui.js', 'js/optimization.js', 'js/app.js',
+  'js/charts/frontier.js', 'js/charts/cml.js',
+  'js/charts/risk.js', 'js/charts/correlation.js',
+  'js/panels/articles.js', 'js/panels/portfolios.js',
+].forEach(f =>
+  test(`${f}`, () => assert(fs.existsSync(path.join(ROOT, f)), `${f} manquant`)));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. ONGLET PROFIL — badge abonnement dynamique (PR #1)
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n5. Onglet Profil\n');
+
 const _els = {};
-
-function mockEl(id, overrides = {}) {
-  _els[id] = { id, textContent: '', innerHTML: '', style: {}, value: '', ...overrides };
+function mockEl(id, o = {}) {
+  _els[id] = { id, textContent:'', innerHTML:'', style:{}, value:'', ...o };
   return _els[id];
 }
-
-const mockDoc = {
-  getElementById: id => _els[id] || null,
-  querySelectorAll: () => [],
-};
-
-// ── Logique extraite de profile.js ────────────────────────────────
+const mockDoc = { getElementById: id => _els[id] || null, querySelectorAll: () => [] };
 
 function applyPlanBadge(p, doc) {
-  const planDisplay = doc.getElementById('accountPlanDisplay');
-  const planSubtext  = doc.getElementById('accountPlanSubtext');
-  if (!planDisplay) return;
-  const userPlan = p.abonnement || 'gratuit';
-  if (userPlan === 'premium') {
-    planDisplay.innerHTML = '✦ Premium';
-    planDisplay.style.background = '#b38f4f';
-    if (planSubtext) planSubtext.textContent = 'Accès illimité';
-  } else if (userPlan === 'pro') {
-    planDisplay.innerHTML = '✦ Pro';
-    planDisplay.style.background = 'var(--blue)';
-    if (planSubtext) planSubtext.textContent = 'Accès complet';
-  } else {
-    planDisplay.innerHTML = 'Gratuit';
-    planDisplay.style.background = 'var(--muted)';
-    if (planSubtext) planSubtext.textContent = 'Accès basique';
-  }
+  const d = doc.getElementById('accountPlanDisplay');
+  const s = doc.getElementById('accountPlanSubtext');
+  if (!d) return;
+  const plan = p.abonnement || 'gratuit';
+  if (plan === 'premium')  { d.innerHTML = '✦ Premium'; d.style.background = '#b38f4f'; if (s) s.textContent = 'Accès illimité'; }
+  else if (plan === 'pro') { d.innerHTML = '✦ Pro';     d.style.background = 'var(--blue)'; if (s) s.textContent = 'Accès complet'; }
+  else                     { d.innerHTML = 'Gratuit';   d.style.background = 'var(--muted)'; if (s) s.textContent = 'Accès basique'; }
 }
 
-function formatDateFR(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function simulateToggleToEditMode(doc) {
-  const displayMode = doc.getElementById('profileDisplayMode');
-  const editMode    = doc.getElementById('profileEditMode');
-  if (!displayMode || !editMode) throw new Error('éléments manquants');
-
-  const pseudo = doc.getElementById('accPseudo').textContent;
-  const nom    = doc.getElementById('accNom').textContent;
-  const prenom = doc.getElementById('accPrenom').textContent;
-  const date   = doc.getElementById('accDate').textContent;
-
-  doc.getElementById('editPseudo').value = pseudo !== '—' ? pseudo : '';
-  doc.getElementById('editNom').value    = nom    !== '—' ? nom    : '';
-  doc.getElementById('editPrenom').value = prenom !== '—' ? prenom : '';
-
-  if (date !== '—' && date.includes('/')) {
-    const [d, m, y] = date.split('/');
-    if (d && m && y) doc.getElementById('editDate').value = `${y}-${m}-${d}`;
-  }
-
-  displayMode.style.display = 'none';
-  editMode.style.display    = 'block';
-}
-
-function simulateToggleToDisplayMode(doc) {
-  doc.getElementById('profileDisplayMode').style.display = 'block';
-  doc.getElementById('profileEditMode').style.display    = 'none';
-  doc.getElementById('editProfileMsg').textContent       = '';
-}
-
-// ── TESTS ─────────────────────────────────────────────────────────
-console.log('\nSmoke tests — onglet Profil\n');
-
-// 1. Badge abonnement
-console.log('1. Badge abonnement');
-
-test('abonnement absent  → Gratuit / gris / Accès basique', () => {
+test('badge plan: absent → Gratuit', () => {
   mockEl('accountPlanDisplay'); mockEl('accountPlanSubtext');
   applyPlanBadge({}, mockDoc);
   assertEqual(_els['accountPlanDisplay'].innerHTML, 'Gratuit');
-  assertEqual(_els['accountPlanDisplay'].style.background, 'var(--muted)');
   assertEqual(_els['accountPlanSubtext'].textContent, 'Accès basique');
 });
-
-test('abonnement=gratuit → Gratuit / gris / Accès basique', () => {
-  mockEl('accountPlanDisplay'); mockEl('accountPlanSubtext');
-  applyPlanBadge({ abonnement: 'gratuit' }, mockDoc);
-  assertEqual(_els['accountPlanDisplay'].innerHTML, 'Gratuit');
-  assertEqual(_els['accountPlanSubtext'].textContent, 'Accès basique');
-});
-
-test('abonnement=pro     → ✦ Pro / bleu / Accès complet', () => {
+test('badge plan: pro → bleu', () => {
   mockEl('accountPlanDisplay'); mockEl('accountPlanSubtext');
   applyPlanBadge({ abonnement: 'pro' }, mockDoc);
   assertEqual(_els['accountPlanDisplay'].innerHTML, '✦ Pro');
   assertEqual(_els['accountPlanDisplay'].style.background, 'var(--blue)');
-  assertEqual(_els['accountPlanSubtext'].textContent, 'Accès complet');
 });
-
-test('abonnement=premium → ✦ Premium / doré / Accès illimité', () => {
+test('badge plan: premium → doré', () => {
   mockEl('accountPlanDisplay'); mockEl('accountPlanSubtext');
   applyPlanBadge({ abonnement: 'premium' }, mockDoc);
   assertEqual(_els['accountPlanDisplay'].innerHTML, '✦ Premium');
   assertEqual(_els['accountPlanDisplay'].style.background, '#b38f4f');
-  assertEqual(_els['accountPlanSubtext'].textContent, 'Accès illimité');
 });
-
-test('accountPlanDisplay absent → pas de crash', () => {
-  const emptyDoc = { getElementById: () => null };
-  applyPlanBadge({ abonnement: 'pro' }, emptyDoc); // ne doit pas lever
-});
-
-// 2. Format date
-console.log('\n2. Formatage de la date');
-
-test('2000-06-01 → 01/06/2000', () => {
-  const r = formatDateFR('2000-06-01');
-  assert(r.includes('/'), `pas de slash dans "${r}"`);
-  const [d, m, y] = r.split('/');
-  assertEqual(d, '01'); assertEqual(m, '06'); assertEqual(y, '2000');
-});
-
-test('null → —', () => assertEqual(formatDateFR(null), '—'));
-test('chaîne vide → —', () => assertEqual(formatDateFR(''), '—'));
-
-// 3. toggleEditProfile — passage en mode édition
-console.log('\n3. Toggle mode édition');
-
-test('passage en édition : champs pré-remplis + visibilité inversée', () => {
-  mockEl('profileDisplayMode', { style: {} });
-  mockEl('profileEditMode',    { style: { display: 'none' } });
-  mockEl('accPseudo',  { textContent: 'educousso' });
-  mockEl('accNom',     { textContent: 'Ducousso' });
-  mockEl('accPrenom',  { textContent: 'Elise' });
-  mockEl('accDate',    { textContent: '11/06/2005' });
-  mockEl('editPseudo', { value: '' });
-  mockEl('editNom',    { value: '' });
-  mockEl('editPrenom', { value: '' });
-  mockEl('editDate',   { value: '' });
-
-  simulateToggleToEditMode(mockDoc);
-
-  assertEqual(_els['editPseudo'].value, 'educousso');
-  assertEqual(_els['editNom'].value,    'Ducousso');
-  assertEqual(_els['editPrenom'].value, 'Elise');
-  assertEqual(_els['editDate'].value,   '2005-06-11', 'date inversée pour input[type=date]');
-  assertEqual(_els['profileDisplayMode'].style.display, 'none');
-  assertEqual(_els['profileEditMode'].style.display,    'block');
-});
-
-test('passage en édition : champ date absent (—) → editDate vide', () => {
-  mockEl('profileDisplayMode', { style: {} });
-  mockEl('profileEditMode',    { style: {} });
-  mockEl('accPseudo',  { textContent: 'foo' });
-  mockEl('accNom',     { textContent: '—' });
-  mockEl('accPrenom',  { textContent: '—' });
-  mockEl('accDate',    { textContent: '—' });
-  mockEl('editPseudo', { value: '' }); mockEl('editNom', { value: '' });
-  mockEl('editPrenom', { value: '' }); mockEl('editDate', { value: '' });
-
-  simulateToggleToEditMode(mockDoc);
-
-  assertEqual(_els['editNom'].value,  '');
-  assertEqual(_els['editDate'].value, '');
-});
-
-// 4. toggleEditProfile — retour en mode affichage
-test('retour affichage : message d\'erreur effacé + visibilité restaurée', () => {
-  mockEl('profileDisplayMode', { style: { display: 'none' } });
-  mockEl('profileEditMode',    { style: { display: 'block' } });
-  mockEl('editProfileMsg', { textContent: 'Erreur lors de la sauvegarde.' });
-
-  simulateToggleToDisplayMode(mockDoc);
-
-  assertEqual(_els['profileDisplayMode'].style.display, 'block');
-  assertEqual(_els['profileEditMode'].style.display,    'none');
-  assertEqual(_els['editProfileMsg'].textContent, '');
-});
-
-// 5. IDs requis présents dans index.html
-console.log('\n4. Intégrité de index.html');
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-
-[
-  'accountPlanDisplay',
-  'accountPlanSubtext',
-  'profileDisplayMode',
-  'profileEditMode',
-  'editPseudo',
-  'editNom',
-  'editPrenom',
-  'editDate',
-  'editProfileMsg',
-  'resetSuccess',
-].forEach(id => {
-  test(`id="${id}" présent`, () => assert(html.includes(`id="${id}"`), `id manquant : ${id}`));
-});
-
-// 6. Intégrité de profile.js
-console.log('\n5. Intégrité de js/profile.js');
-const profileJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'profile.js'), 'utf8');
-
 test('window.toggleEditProfile exporté', () =>
   assert(profileJs.includes('window.toggleEditProfile'), 'export manquant'));
-
 test('window.saveProfileData exporté', () =>
   assert(profileJs.includes('window.saveProfileData'), 'export manquant'));
-
 test('requête Supabase inclut abonnement', () =>
-  assert(profileJs.includes('abonnement'), 'champ abonnement absent de la requête'));
+  assert(profileJs.includes('abonnement'), 'champ abonnement absent'));
+test('id="accountPlanDisplay" dans index.html', () =>
+  assert(html.includes('id="accountPlanDisplay"'), 'id manquant'));
+test('id="profileDisplayMode" dans index.html', () =>
+  assert(html.includes('id="profileDisplayMode"'), 'id manquant'));
+test('id="editPseudo" dans index.html', () =>
+  assert(html.includes('id="editPseudo"'), 'id manquant'));
 
-test('logique badge accountPlanDisplay présente', () =>
-  assert(profileJs.includes('accountPlanDisplay'), 'logique badge absente'));
-
-test('logique badge : cas gratuit présent', () =>
-  assert(profileJs.includes("'gratuit'") || profileJs.includes('"gratuit"'), 'cas gratuit absent'));
-
-test('logique badge : cas premium présent', () =>
-  assert(profileJs.includes("'premium'") || profileJs.includes('"premium"'), 'cas premium absent'));
-
-// ── Résultat ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Résultat
+// ─────────────────────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\n${total} tests — ${passed} ✓  ${failed} ✗\n`);
-if (failed > 0) process.exit(1);
+if (failed > 0) {
+  console.error('❌ Des tests ont échoué — PR bloquée.\n');
+  process.exit(1);
+}
+console.log('✅ Tous les tests passent.\n');

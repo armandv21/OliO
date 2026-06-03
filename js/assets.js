@@ -541,6 +541,13 @@ window.openAssetSheet = function(ticker, encodedName, isin) {
   // 🌟 On lance la création du graphique (il s'affichera tout seul une fois chargé)
   renderAssetSheetChart(ticker, catColor);
 
+  // 🌟 NOUVEAU : On lance le graphique P/E (en lui passant l'EPS de l'action)
+  const currentEps = assetData ? assetData.eps : null;
+  renderPEChart(ticker, currentEps, catColor);
+
+  // graphique dividendes
+  renderDividendChart(ticker, catColor);
+
   // 2. Textes d'en-tête
   overlay.querySelector('.asset-sheet-title').textContent = name;
 
@@ -629,6 +636,101 @@ window.preloadVisibleCharts = function() {
     }
   });
 };
+
+// ── Génération du graphique P/E Historique ──
+async function renderPEChart(ticker, currentEps, color) {
+  const container = document.getElementById('as-pe-chart');
+  if (!container) return;
+
+  // S'il n'y a pas de bénéfice (EPS négatif ou manquant), le P/E n'a pas de sens mathématique
+  if (!currentEps || currentEps <= 0) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;text-align:center;">Historique P/E indisponible<br>(Bénéfices négatifs ou nuls)</div>';
+    return;
+  }
+  
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Calcul du P/E...</div>';
+
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('stock_prices')
+      .select('price_date, close_price')
+      .eq('ticker', ticker)
+      .order('price_date', { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    // Pour que le P/E calculé avec l'EPS actuel soit pertinent, on se limite à la dernière année (environ 252 jours de bourse)
+    const recentData = data.slice(-252); 
+
+    const dates  = recentData.map(d => new Date(d.price_date));
+    
+    // 🌟 LA MAGIE EST ICI : On divise le prix historique par le bénéfice actuel
+    const peValues = recentData.map(d => parseFloat(d.close_price) / currentEps);
+
+    container.innerHTML = ''; 
+    
+    Plotly.newPlot(container, [{
+      x: dates, y: peValues, type:'scatter', mode:'lines',
+      line:      { color: color || '#3466a0', width: 2 },
+      fill:      'tozeroy',
+      fillcolor: 'rgba(52, 102, 160, 0.08)',
+      hovertemplate: '%{x|%d/%m/%Y}<br><b>P/E : %{y:.1f}</b><extra></extra>'
+    }], {
+      margin: { t:10, r:20, b:30, l:30 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      yaxis: { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      showlegend: false
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;">Données indisponibles</div>';
+  }
+}
+
+// ── Génération du graphique des Dividendes ──
+async function renderDividendChart(ticker, color) {
+  const container = document.getElementById('as-div-chart');
+  if (!container) return;
+
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Chargement des dividendes...</div>';
+
+  try {
+    // ⚠️ On interrogera une future table 'dividends' dans Supabase
+    const { data, error } = await window.supabaseClient
+      .from('dividends')
+      .select('date, amount')
+      .eq('ticker', ticker)
+      .order('date', { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    const dates = data.map(d => new Date(d.date));
+    const amounts = data.map(d => parseFloat(d.amount));
+
+    container.innerHTML = ''; 
+    
+    // Création du graphique Plotly en BARRES
+    Plotly.newPlot(container, [{
+      x: dates, 
+      y: amounts, 
+      type: 'bar', // C'est ici que la magie des barres opère !
+      marker: { color: color || '#2d8a7a' },
+      hovertemplate: '%{x|%d/%m/%Y}<br><b>Montant : %{y:.2f} $</b><extra></extra>'
+    }], {
+      margin: { t:10, r:20, b:30, l:30 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      yaxis: { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      showlegend: false
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;">Historique des dividendes indisponible</div>';
+  }
+}
 
 // Expose globally
 window.openAssetPanel = openAssetPanel;

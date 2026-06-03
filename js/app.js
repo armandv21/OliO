@@ -41,7 +41,8 @@ async function loadAssetsFromDatabase() {
           price_to_sales: asset.price_to_sales,
           roe: asset.roe,
           operating_margin: asset.operating_margin,
-          shares_outstanding: asset.shares_outstanding
+          shares_outstanding: asset.shares_outstanding,
+          eps: asset.eps,
       };
 
       if (categoryIndex !== -1) {

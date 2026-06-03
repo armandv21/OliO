@@ -118,8 +118,13 @@ function _populateAccountPane(p) {
   const planDisplay = document.getElementById('accountPlanDisplay');
   const planSubtext = document.getElementById('accountPlanSubtext');
   if (planDisplay) {
-    const userPlan = p.abonnement || 'gratuit';
-    if (userPlan === 'premium') {
+    const userPlan = (p.abonnement || 'gratuit').toLowerCase();
+    
+    if (userPlan === 'moderateur') {
+      planDisplay.innerHTML = '✦ Modérateur';
+      planDisplay.style.background = '#8e44ad'; // Un joli violet pour les différencier, tu peux mettre 'var(--teal)' si tu préfères
+      if (planSubtext) planSubtext.textContent = 'Accès complet & Administration';
+    } else if (userPlan === 'premium') {
       planDisplay.innerHTML = '✦ Premium';
       planDisplay.style.background = '#b38f4f';
       if (planSubtext) planSubtext.textContent = 'Accès illimité';
@@ -240,9 +245,9 @@ window.isUserPremium = function() {
     // Si l'utilisateur n'est pas connecté ou que ses données ne sont pas chargées
     if (!_profileData || !_profileData.abonnement) return false;
     
-    // On met en minuscules par sécurité et on vérifie si c'est "pro" ou "premium"
+    // On met en minuscules par sécurité et on vérifie si c'est pro, premium OU moderateur
     const plan = _profileData.abonnement.toLowerCase();
-    return plan === 'premium' || plan === 'pro'; 
+    return plan === 'premium' || plan === 'pro' || plan === 'moderateur'; 
 };
 window.toggleProfileDropdown = toggleProfileDropdown;
 window.switchProfileTab = switchProfileTab;

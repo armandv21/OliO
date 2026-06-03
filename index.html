@@ -29,7 +29,7 @@
 <div id="authOverlay" class="auth-overlay hidden">
   <div class="auth-box" style="position: relative;">
     <button onclick="closeAuthModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted);">✕</button>
-    <img src="images/logo_olio.png" alt="OliO Logo" style="height:44px;width:auto;margin:0 auto 1.5rem;display:block;"/>
+    <img src="images/logo_olio.png" alt="OliO Logo" style="display: block; width: 120px; height: auto;" />
     
     <div id="authError" class="auth-error"></div>
     
@@ -504,7 +504,7 @@
       <div class="asset-sheet-pane" id="assetPane-price">
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Historique du cours</div>
-          <div class="asset-sheet-placeholder" style="height:220px">Graphique à venir</div>
+          <div id="as-price-chart" style="height:260px; width:100%;"></div>
         </div>
       </div>
 

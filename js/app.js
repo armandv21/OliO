@@ -23,11 +23,25 @@ async function loadAssetsFromDatabase() {
       const categoryIndex = window.ASSETS_DATA.findIndex(c => c.name === asset.categorie);
       
       // On crée l'objet avec la propriété "ticker" (et pas "id") pour ne pas casser ton UI
+      // On crée l'objet en ajoutant TOUTES les données financières pour le Pop-up
       const newAsset = {
           ticker: asset.ticker,  
           name: asset.name,      
           isin: asset.isin,      
-          labels: asset.labels || [] 
+          labels: asset.labels || [],
+          // --- NOUVELLES DONNÉES ---
+          description: asset.description,
+          dividend_yield: asset.dividend_yield,
+          dividend_growth: asset.dividend_growth,
+          payout_ratio: asset.payout_ratio,
+          pe_ratio: asset.pe_ratio,
+          beta: asset.beta,
+          market_cap: asset.market_cap,
+          price_to_book: asset.price_to_book,
+          price_to_sales: asset.price_to_sales,
+          roe: asset.roe,
+          operating_margin: asset.operating_margin,
+          shares_outstanding: asset.shares_outstanding
       };
 
       if (categoryIndex !== -1) {

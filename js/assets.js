@@ -286,6 +286,17 @@ function _renderIntoContainer(container, filterText, suffix) {
       const chartDiv = document.createElement('div');
       chartDiv.className = 'home-asset-chart';
       chartDiv.id = 'homeChart_' + item.ticker + suffix;
+      // --- FORMATAGE DES DONNÉES ---
+      const peVal = item.pe_ratio != null ? item.pe_ratio.toFixed(1) : '—';
+      const divVal = item.dividend_yield != null ? (item.dividend_yield * 100).toFixed(2) + '%' : '—';
+      const betaVal = item.beta != null ? item.beta.toFixed(2) : '—';
+      const marginVal = item.net_margin != null ? (item.net_margin * 100).toFixed(1) + '%' : '—';
+      let capVal = '—';
+      if (item.market_cap != null) {
+          capVal = item.market_cap >= 1e12 ? (item.market_cap / 1e12).toFixed(2) + ' T$' : (item.market_cap / 1e9).toFixed(2) + ' Md$';
+      }
+
+      // --- INJECTION DANS LE HTML ---
       chartDiv.innerHTML =
         '<div class="home-asset-chart-header">' +
           '<span style="color:' + cat.color + ';font-weight:600;font-size:0.68rem">' + item.name + ' (' + item.ticker + ')' + (item.isin ? '<span style="margin-left:6px;font-family:monospace;letter-spacing:0.01em;color:var(--muted2);font-size:0.57rem;font-weight:400">' + item.isin + '</span>' : '') + '</span>' +
@@ -293,11 +304,11 @@ function _renderIntoContainer(container, filterText, suffix) {
         '<div class="asset-detail-body">' +
           '<div class="home-asset-chart-inner" id="homeChartInner_' + item.ticker + suffix + '"></div>' +
           '<div class="asset-kpi-grid" id="assetKpi_' + item.ticker + suffix + '">' +
-            _buildKpiCell('P/E', '—', 'kpi-pe-' + item.ticker + suffix) +
-            _buildKpiCell('Dividende', '—', 'kpi-div-' + item.ticker + suffix) +
-            _buildKpiCell('Bêta', '—', 'kpi-beta-' + item.ticker + suffix) +
-            _buildKpiCell('Cap.', '—', 'kpi-cap-' + item.ticker + suffix) +
-            _buildKpiCell('Marge N.', '—', 'kpi-margin-' + item.ticker + suffix) +
+            _buildKpiCell('P/E', peVal, 'kpi-pe-' + item.ticker + suffix) +
+            _buildKpiCell('Dividende', divVal, 'kpi-div-' + item.ticker + suffix) +
+            _buildKpiCell('Bêta', betaVal, 'kpi-beta-' + item.ticker + suffix) +
+            _buildKpiCell('Cap.', capVal, 'kpi-cap-' + item.ticker + suffix) +
+            _buildKpiCell('Marge N.', marginVal, 'kpi-margin-' + item.ticker + suffix) +
             '<div class="asset-kpi-cell" style="padding:0">' +
               '<button class="asset-kpi-open-btn" onclick="event.stopPropagation();openAssetSheet(\'' + item.ticker + '\',\'' + encodeURIComponent(item.name) + '\',\'' + (item.isin || '') + '\')" title="Fiche complète">+</button>' +
             '</div>' +
@@ -433,6 +444,59 @@ function clearHomeSearch() {
   renderHomeAssetList('');
 }
 
+// ── Génération du graphique pour la Fiche Complète ──
+async function renderAssetSheetChart(ticker, color) {
+  const container = document.getElementById('as-price-chart');
+  if (!container) return;
+  
+  // Message de chargement
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.8rem;font-style:italic;">Chargement de l\'historique...</div>';
+
+  try {
+    // Récupération de TOUT l'historique disponible pour cet actif
+    const { data, error } = await window.supabaseClient
+      .from('stock_prices')
+      .select('price_date, close_price')
+      .eq('ticker', ticker)
+      .order('price_date', { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    const dates  = data.map(d => new Date(d.price_date));
+    const prices = data.map(d => parseFloat(d.close_price));
+
+    // Si on n'a pas passé de couleur spécifique, on met vert (hausse) ou rouge (baisse)
+    const isPos = prices[prices.length - 1] >= prices[0];
+    const lineColor = color || (isPos ? '#2d8a7a' : '#b03045'); 
+    
+    // Détermination de la couleur de fond transparente sous la courbe
+    let fillColor = 'rgba(0,0,0,0.05)';
+    if (lineColor === '#2d8a7a') fillColor = 'rgba(45,138,122,0.07)';
+    if (lineColor === '#b03045') fillColor = 'rgba(176,48,69,0.07)';
+
+    container.innerHTML = ''; // On vide le chargement
+    
+    // Création du graphique Plotly
+    Plotly.newPlot(container, [{
+      x: dates, y: prices, type:'scatter', mode:'lines',
+      line:      { color: lineColor, width: 2 },
+      fill:      'tozeroy',
+      fillcolor: fillColor,
+      hovertemplate: '%{x|%d/%m/%Y}<br><b>%{y:.2f}</b><extra></extra>'
+    }], {
+      margin: { t:10, r:20, b:30, l:40 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      yaxis: { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, showline:false, zeroline:false },
+      showlegend: false
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.8rem;font-style:italic;">Données historiques indisponibles</div>';
+  }
+}
+
 // ── KPI helpers ───────────────────────────────────────────────────────────────
 
 function _buildKpiCell(label, value, id) {
@@ -462,11 +526,60 @@ window.openAssetSheet = function(ticker, encodedName, isin) {
   const overlay = document.getElementById('assetSheetOverlay');
   if (!overlay) return;
 
-  overlay.querySelector('.asset-sheet-title').textContent = name;
-  overlay.querySelector('.asset-sheet-meta').textContent =
-    ticker + (isin ? ' · ' + isin : '');
+  // 1. On cherche les données de l'actif cliqué dans notre liste globale
+  let assetData = null;
+  let catColor = '#1e3a5f'; // Couleur par défaut
+  
+  window.ASSETS_DATA.forEach(cat => {
+    const found = cat.items.find(i => i.ticker === ticker);
+    if (found) {
+        assetData = found;
+        catColor = cat.color; // On récupère la couleur de la catégorie !
+    }
+  });
 
-  // Reset tabs
+  // 🌟 On lance la création du graphique (il s'affichera tout seul une fois chargé)
+  renderAssetSheetChart(ticker, catColor);
+
+  // 2. Textes d'en-tête
+  overlay.querySelector('.asset-sheet-title').textContent = name;
+
+  // 3. Remplissage des données si elles existent
+  if (assetData) {
+    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    const fPct = v => v != null ? (v * 100).toFixed(2) + '%' : '—';
+    const fNum = v => v != null ? v.toFixed(2) : '—';
+    const fCap = v => v != null ? (v >= 1e12 ? (v / 1e12).toFixed(2) + ' T$' : (v / 1e9).toFixed(2) + ' Md$') : '—';
+
+    // Remplissage de l'onglet "Aperçu"
+    el('as-pe', fNum(assetData.pe_ratio));
+    el('as-div', fPct(assetData.dividend_yield));
+    el('as-cap', fCap(assetData.market_cap));
+    el('as-beta', fNum(assetData.beta));
+    el('as-eps', fNum(assetData.eps)); // 🌟 Ligne ajoutée pour le BNA (Bénéfice par action)
+    el('as-divgrowth', fPct(assetData.dividend_growth));
+    
+    // Description (on écrase le placeholder)
+    el('as-description', assetData.description || 'Aucune description disponible pour cette entreprise.');
+
+    // Onglet Valorisation
+    el('as-payout', fPct(assetData.payout_ratio)); // (Le payout ratio est bien dans cet onglet en HTML)
+    el('as-pb', fNum(assetData.price_to_book));
+    el('as-ps', fNum(assetData.price_to_sales));
+    
+    // Onglet Dividendes
+    el('as-yield', fPct(assetData.dividend_yield));
+    
+    // Onglet Rentabilité
+    el('as-roe', fPct(assetData.roe));
+    el('as-opm', fPct(assetData.operating_margin));
+    el('as-npm', fPct(assetData.net_margin));
+    
+    // Onglet Santé
+    el('as-shares', fCap(assetData.shares_outstanding)); //pour le nombre d'actions en circulation
+  }
+
+  // 4. Reset tabs (Remet sur le premier onglet)
   overlay.querySelectorAll('.asset-sheet-tab').forEach((t, i) => {
     t.classList.toggle('active', i === 0);
   });
@@ -474,6 +587,7 @@ window.openAssetSheet = function(ticker, encodedName, isin) {
     p.classList.toggle('active', i === 0);
   });
 
+  // 5. Affichage
   overlay.classList.add('open');
 };
 

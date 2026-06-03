@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[Resource from github at repo://armandv21/OliO/sha/e4c4a095830f84958d78929eeee2756ec30651e4/contents/index.html] <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -863,6 +863,7 @@
         <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
         <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
       </div>
+      <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
       <div class="profile-section-label">Informations</div>
       <div id="profileDisplayMode">
         <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
@@ -980,5 +981,6 @@
 <script src="js/panels/portfolios.js"></script>
 <script src="js/data/articles.js"></script>
 <script src="js/app.js"></script>
+<script src="js/stripe.js"></script>
 </body>
 </html>

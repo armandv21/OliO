@@ -133,6 +133,9 @@ function _populateAccountPane(p) {
       if (planSubtext) planSubtext.textContent = 'Accès basique';
     }
   }
+  // Show upgrade button only for free users
+  const upgradeBtn = document.getElementById('btnUpgradePro');
+  if (upgradeBtn) upgradeBtn.style.display = (!p.abonnement || p.abonnement === 'gratuit') ? 'block' : 'none';
 }
 
 // ── Réinitialisation mot de passe ──
@@ -237,10 +240,7 @@ window.saveProfileData = async function() {
 // Expose globally for HTML onclick
 // ── VÉRIFICATION DE L'ABONNEMENT PREMIUM ──
 window.isUserPremium = function() {
-    // Si l'utilisateur n'est pas connecté ou que ses données ne sont pas chargées
     if (!_profileData || !_profileData.abonnement) return false;
-    
-    // On met en minuscules par sécurité et on vérifie si c'est "pro" ou "premium"
     const plan = _profileData.abonnement.toLowerCase();
     return plan === 'premium' || plan === 'pro'; 
 };

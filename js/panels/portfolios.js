@@ -420,6 +420,18 @@ window.closePortfolioDetails = function() {
     }
 };
 
+
+// ── Normalise les tickers anciens ("ExxonMobilXOM" → "XOM") ──────────────
+function normalizeTicker(raw) {
+    if (!raw) return raw;
+    if (/^[A-Z0-9.\-]{1,7}$/.test(raw)) return raw;
+    const parenMatch = raw.match(/\(([A-Z0-9.\-]{1,7})\)/);
+    if (parenMatch) return parenMatch[1];
+    const upperMatch = raw.match(/([A-Z][A-Z0-9.\-]{1,5})$/);
+    if (upperMatch) return upperMatch[1];
+    return raw.trim().toUpperCase();
+}
+
 window.loadMyPortfolios = async function() {
     const container = document.getElementById('myPortfoliosList');
     if (!container) return;
@@ -447,7 +459,15 @@ window.loadMyPortfolios = async function() {
         }
 
         container.innerHTML = '';
-        portfolios.forEach(pf => renderPortfolioCard(pf, container));
+        portfolios.forEach(pf => {
+            if (Array.isArray(pf.composition)) {
+                pf.composition = pf.composition.map(c => ({
+                    ...c,
+                    ticker: normalizeTicker(c.ticker || '')
+                }));
+            }
+            renderPortfolioCard(pf, container);
+        });
 
     } catch (err) {
         console.error(err);

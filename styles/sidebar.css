@@ -260,7 +260,7 @@
 }
 .btn-run-home:hover { background: var(--blue-lt); }
 .btn-run-home:disabled { opacity: 0.4; cursor: not-allowed; }
-.sidebar-header { padding: 28px 22px 18px; border-bottom: 1px solid var(--border); }
+.sidebar-header { padding: 0 22px; min-height: 68px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
 .logo { font-family: var(--font-sans); font-size: 0.62rem; font-weight: 500; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px; }
 .sidebar-title { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: var(--ink); line-height: 1.3; }
 .sidebar-sticky { padding: 10px 20px 0; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }

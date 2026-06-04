@@ -89,6 +89,11 @@ function renderArticlesGrid(articles) {
 async function initArticlesPanel() {
   const grid = document.getElementById('articlesGrid');
   if (!grid) return;
+
+  // Toujours revenir à la grille, jamais à un article ouvert précédemment
+  document.getElementById('articleReader').style.display = 'none';
+  document.getElementById('articlesGrid').style.display  = 'block';
+
   grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:60px;font-size:0.85rem;">Chargement…</div>';
 
   // Vérifie si Supabase a des articles

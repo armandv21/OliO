@@ -592,8 +592,9 @@
       </div>
     </div>
     <div id="articleReader" style="display:none;max-width:860px;margin:0 auto;padding:0 32px 60px">
-      <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s">← Retour aux articles</button>
+      <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s;margin-left:-24px" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">← Retour au catalogue</button>
       <div id="articleContent"></div>
+      <div id="articleNav"></div>
     </div>
   </div>
 </div>

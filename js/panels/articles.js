@@ -90,8 +90,37 @@ async function initArticlesPanel() {
   const grid = document.getElementById('articlesGrid');
   if (!grid) return;
   grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:60px;font-size:0.85rem;">Chargement…</div>';
+
+  // Vérifie si Supabase a des articles
+  let sbCount = 0;
+  try {
+    const { count } = await window.supabaseClient
+      .from('articles').select('*', { count: 'exact', head: true });
+    sbCount = count || 0;
+  } catch(e) {}
+
+  // Auto-seed pour le modérateur si Supabase est vide
+  if (sbCount === 0 && typeof window.isUserModerator === 'function' && window.isUserModerator()) {
+    grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:60px;font-size:0.85rem;">Import initial des articles…</div>';
+    await _seedArticlesSilently();
+  }
+
   _articlesLoaded = await loadArticlesData();
   renderArticlesGrid(_articlesLoaded);
+}
+
+async function _seedArticlesSilently() {
+  const rows = (window._articlesMeta || []).map(m => ({
+    id: m.id, ordre: m.ordre || m.id,
+    icone: m.icone, gradient: m.gradient,
+    categorie: m.categorie, titre: m.titre,
+    resume: m.resume, duree: m.duree,
+    niveau: m.niveau, couleur_lien: m.couleur_lien,
+    content: (window._articleData || {})[m.id] || ''
+  }));
+  try {
+    await window.supabaseClient.from('articles').upsert(rows, { onConflict: 'id' });
+  } catch(e) { console.warn('_seedArticlesSilently:', e); }
 }
 
 // ── Helpers navigation ─────────────────────────────────────────────────────
@@ -215,7 +244,10 @@ window.saveArticle = async function() {
   try {
     let error;
     if (idVal) {
-      ({ error } = await window.supabaseClient.from('articles').update(payload).eq('id', parseInt(idVal)));
+      // upsert : INSERT si inexistant, UPDATE si déjà là
+      ({ error } = await window.supabaseClient
+        .from('articles')
+        .upsert([{ ...payload, id: parseInt(idVal) }], { onConflict: 'id' }));
     } else {
       payload.ordre = _articlesLoaded.length > 0 ? Math.max(..._articlesLoaded.map(a => a.ordre || 0)) + 1 : 1;
       ({ error } = await window.supabaseClient.from('articles').insert([payload]));
@@ -249,8 +281,11 @@ window.deleteArticle = function(id, titre) {
       try {
         const { error } = await window.supabaseClient.from('articles').delete().eq('id', id);
         if (error) throw error;
-        _articlesLoaded = await loadArticlesData();
+        // Retire aussi localement (couvre le cas où l'article était en fallback statique)
+        _articlesLoaded = _articlesLoaded.filter(a => a.id !== Number(id));
         renderArticlesGrid(_articlesLoaded);
+        // Resync depuis Supabase en arrière-plan
+        loadArticlesData().then(data => { _articlesLoaded = data; });
       } catch(err) {
         console.error('deleteArticle:', err);
         showAlertModal('Erreur', "Impossible de supprimer l'article.");

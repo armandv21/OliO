@@ -80,7 +80,7 @@ async function loadProfileInfo() {
     const email = user.email || '';
     const { data: profile } = await window.supabaseClient
       .from('data')
-      .select('pseudo, nom, prenom, date_naissance, abonnement')
+      .select('pseudo, nom, prenom, date_naissance, abonnement, role')
       .eq('id', user.id)
       .single();
     _profileData = { ...profile, email };

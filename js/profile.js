@@ -247,7 +247,12 @@ window.saveProfileData = async function() {
 window.isUserPremium = function() {
     if (!_profileData || !_profileData.abonnement) return false;
     const plan = _profileData.abonnement.toLowerCase();
-    return plan === 'premium' || plan === 'pro' || plan === 'moderateur'; 
+    return plan === 'premium' || plan === 'pro' || plan === 'moderateur';
+};
+
+window.isUserModerator = function() {
+    if (!_profileData) return false;
+    return (_profileData.role || '').toLowerCase() === 'moderateur';
 };
 
 window.toggleProfileDropdown = toggleProfileDropdown;

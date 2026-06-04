@@ -134,7 +134,7 @@ window.updateAuthUI = function(isLoggedIn) {
   
   if (isLoggedIn) {
     if (loginBtn) loginBtn.style.display = 'none'; // Cache le bouton connexion
-    if (profileWrap) profileWrap.style.display = 'block'; // Affiche le profil
+    if (profileWrap) profileWrap.style.display = 'flex'; // Affiche le profil
   } else {
     if (loginBtn) loginBtn.style.display = 'block'; // Affiche le bouton connexion
     if (profileWrap) profileWrap.style.display = 'none'; // Cache le profil

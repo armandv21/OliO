@@ -236,6 +236,90 @@
         <button class="panel-nav-btn" id="btnPortefeuilles" onclick="openFullPanel('portefeuilles'); loadMyPortfolios();">Mes portefeuilles</button>
         
         <button class="btn-run" id="btnTopLogin" onclick="openAuthModal()" style="padding: 6px 16px; margin-left: 8px;">Connexion</button>
+        <div class="profile-wrap" id="profileWrap" style="display:none;">
+          <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-dd-header">
+              <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
+              <div style="min-width:0">
+                <div class="profile-dd-name" id="profileDdName">Chargement…</div>
+                <div class="profile-dd-email" id="profileDdEmail"></div>
+              </div>
+            </div>
+            <div class="profile-dd-tabs">
+              <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
+              <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
+            </div>
+            <div class="profile-dd-pane active" id="pane-settings">
+              <div class="profile-setting-row">
+                <span class="profile-setting-label">Langue</span>
+                <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
+                  <option value="fr">Français</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <div class="profile-setting-row">
+                <span class="profile-setting-label">Devise</span>
+                <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
+                  <option value="eur">EUR €</option>
+                  <option value="usd">USD $</option>
+                  <option value="gbp">GBP £</option>
+                  <option value="chf">CHF ₣</option>
+                </select>
+              </div>
+              <div class="profile-sim-row">
+                <div class="profile-sim-label">
+                  <span class="profile-setting-label">Simulations Monte Carlo</span>
+                  <span class="profile-sim-val" id="profileSimVal">6 000</span>
+                </div>
+                <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
+              </div>
+            </div>
+            <div class="profile-dd-pane" id="pane-account">
+              <div class="profile-section-label">Abonnement</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
+                <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
+                <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
+              </div>
+              <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
+              <div class="profile-section-label">Informations</div>
+              <div id="profileDisplayMode">
+                <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
+                <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
+                <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
+                <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
+                <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
+                <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
+                <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
+                <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
+                <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
+              </div>
+              <div id="profileEditMode" style="display:none;margin-top:10px;">
+                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+                  <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
+                  <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+                </div>
+                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+                  <span class="profile-info-key" style="margin-top:5px;">Nom</span>
+                  <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+                </div>
+                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+                  <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
+                  <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+                </div>
+                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+                  <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
+                  <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+                </div>
+                <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
+                <div style="display:flex;gap:10px;margin-top:15px;">
+                  <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
+                  <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="content">
@@ -842,90 +926,6 @@
   </div>
 </div>
 
-<div class="profile-wrap" id="profileWrap" style="display:none;">
-  <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
-  <div class="profile-dropdown" id="profileDropdown">
-    <div class="profile-dd-header">
-      <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
-      <div style="min-width:0">
-        <div class="profile-dd-name" id="profileDdName">Chargement…</div>
-        <div class="profile-dd-email" id="profileDdEmail"></div>
-      </div>
-    </div>
-    <div class="profile-dd-tabs">
-      <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
-      <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
-    </div>
-    <div class="profile-dd-pane active" id="pane-settings">
-      <div class="profile-setting-row">
-        <span class="profile-setting-label">Langue</span>
-        <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
-          <option value="fr">Français</option>
-          <option value="en">English</option>
-        </select>
-      </div>
-      <div class="profile-setting-row">
-        <span class="profile-setting-label">Devise</span>
-        <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
-          <option value="eur">EUR €</option>
-          <option value="usd">USD $</option>
-          <option value="gbp">GBP £</option>
-          <option value="chf">CHF ₣</option>
-        </select>
-      </div>
-      <div class="profile-sim-row">
-        <div class="profile-sim-label">
-          <span class="profile-setting-label">Simulations Monte Carlo</span>
-          <span class="profile-sim-val" id="profileSimVal">6 000</span>
-        </div>
-        <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
-      </div>
-    </div>
-    <div class="profile-dd-pane" id="pane-account">
-      <div class="profile-section-label">Abonnement</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
-        <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
-        <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
-      </div>
-      <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
-      <div class="profile-section-label">Informations</div>
-      <div id="profileDisplayMode">
-        <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
-        <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
-        <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
-        <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
-        <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
-        <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
-        <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
-        <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
-        <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
-      </div>
-      <div id="profileEditMode" style="display:none;margin-top:10px;">
-        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-          <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
-          <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-        </div>
-        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-          <span class="profile-info-key" style="margin-top:5px;">Nom</span>
-          <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-        </div>
-        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-          <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
-          <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-        </div>
-        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-          <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
-          <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-        </div>
-        <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
-        <div style="display:flex;gap:10px;margin-top:15px;">
-          <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
-          <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="popup-overlay" id="savePortfolioPopup" onclick="if(event.target===this)closeSavePortfolio()">
   <div class="popup-box" style="max-width:380px;width:90%">

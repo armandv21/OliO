@@ -1,4 +1,4 @@
-[Resource from github at repo://armandv21/OliO/sha/e4c4a095830f84958d78929eeee2756ec30651e4/contents/index.html] <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -677,7 +677,7 @@
             <div class="asset-sheet-kpi-card"><div class="label">Price/Sales</div><div class="value" id="as-ps">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Price/FCF</div><div class="value" id="as-pfcf">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">PEG</div><div class="value" id="as-peg">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">EV/Rev.</div><div class="value" id="as-evr">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">EV/Rev.</div><div class="value" id="as-evrev">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Payout Ratio</div><div class="value" id="as-payout">—</div></div>
           </div>
         </div>
@@ -695,7 +695,7 @@
             <div class="asset-sheet-kpi-card"><div class="label">Rendement</div><div class="value" id="as-yield">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Fréquence</div><div class="value" id="as-freq">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Montant annuel</div><div class="value" id="as-divamt">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Années consec.</div><div class="value" id="as-divyears">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dernier dividende</div><div class="value" id="as-lastdiv">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Ex-dividende</div><div class="value" id="as-exdiv">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Croissance 5a</div><div class="value" id="as-divgrowth2">—</div></div>
           </div>
@@ -706,35 +706,48 @@
         </div>
       </div>
 
-      <!-- FINANCES -->
       <div class="asset-sheet-pane" id="assetPane-financials">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Compte de résultat</div>
-          <div class="asset-sheet-placeholder" style="height:160px">Graphiques CA · FCF/action · BNA à venir</div>
+          <div class="asset-sheet-section-title">Compte de résultat (12 derniers mois)</div>
+          <div class="asset-sheet-kpi-row">
+            <div class="asset-sheet-kpi-card"><div class="label">Chiffre d'affaires</div><div class="value" id="as-rev">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Free Cash Flow</div><div class="value" id="as-fcf">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">EBITDA</div><div class="value" id="as-ebitda">—</div></div>
+          </div>
+
+          <div class="asset-sheet-section-title" style="margin-top: 25px;">Structure de rentabilité (Cascade)</div>
+          <div id="as-waterfall-chart" style="height: 250px; width: 100%;"></div>
         </div>
       </div>
 
-      <!-- CROISSANCE -->
+      <!-- CROISSANCE ANNUELLE -->
       <div class="asset-sheet-pane" id="assetPane-growth">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Croissance annuelle</div>
-          <div class="asset-sheet-placeholder" style="height:160px">Graphiques croissance CA · FCF · BNA à venir</div>
+          <div class="asset-sheet-section-title">Dynamique sur 1 an</div>
+          <div class="asset-sheet-kpi-row">
+            <div class="asset-sheet-kpi-card"><div class="label">Croiss. Chiffre d'Affaires</div><div class="value" id="as-rev-growth">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Croiss. Bénéfice (BNA)</div><div class="value" id="as-eps-growth">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Performance Boursière</div><div class="value" id="as-price-growth">—</div></div>
+          </div>
+
+          <div class="asset-sheet-section-title" style="margin-top: 25px;">Historique Financier (4 ans)</div>
+          <div id="as-growth-chart" style="height:220px; width:100%;"></div>
+
         </div>
       </div>
 
       <!-- RENTABILITÉ -->
       <div class="asset-sheet-pane" id="assetPane-profitability">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Marges et retours</div>
+          <div class="asset-sheet-section-title">Ratios de rentabilité</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Marge opérat.</div><div class="value" id="as-opm">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Marge nette</div><div class="value" id="as-npm">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">ROE</div><div class="value" id="as-roe">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">ROE (Retour sur capitaux)</div><div class="value" id="as-roe">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Marge Opérationnelle</div><div class="value" id="as-opm">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Marge Nette</div><div class="value" id="as-netmargin">—</div></div>
           </div>
-        </div>
-        <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Historique</div>
-          <div class="asset-sheet-placeholder" style="height:140px">Graphiques à venir</div>
+
+          <div class="asset-sheet-section-title" style="margin-top: 25px;">Décomposition des marges</div>
+          <div id="as-profit-chart" style="height: 220px; width: 100%;"></div>
         </div>
       </div>
 
@@ -742,54 +755,65 @@
       <div class="asset-sheet-pane" id="assetPane-health">
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Ratios de solidité financière</div>
+          
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Dette/CP</div><div class="value" id="as-de">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Dette/EBITDA</div><div class="value" id="as-debitda">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Couv. intérêts</div><div class="value" id="as-icr">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Ratio distrib.</div><div class="value" id="as-pr">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Ratio dist. FCF</div><div class="value" id="as-fcfpr">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Actions circ.</div><div class="value" id="as-shares">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dette / CP</div><div class="value" id="as-health-de">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dette / EBITDA</div><div class="value" id="as-health-debitebitda">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Couv. Intérêts</div><div class="value" id="as-health-ic">—</div></div>
           </div>
-        </div>
-        <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Historique dette / EBITDA</div>
-          <div class="asset-sheet-placeholder" style="height:120px">Graphique à venir</div>
+          
+          <div class="asset-sheet-kpi-row" style="margin-top: 15px;">
+            <div class="asset-sheet-kpi-card"><div class="label">Ratio de liquidité</div><div class="value" id="as-current-ratio">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Trésorerie Totale</div><div class="value" id="as-total-cash">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dette Totale</div><div class="value" id="as-total-debt">—</div></div>
+          </div>
+
+          <div class="asset-sheet-section-title" style="margin-top: 25px;">Historique Dette / EBITDA (4 ans)</div>
+          <div id="as-debt-ebitda-chart" style="height:220px; width:100%;"></div>
         </div>
       </div>
 
       <!-- DCF -->
       <div class="asset-sheet-pane" id="assetPane-dcf">
+        
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Valorisation intrinsèque — DCF Croissance CA</div>
+          <div class="asset-sheet-section-title">Valorisation Intrinsèque — Modèle DCF (Free Cash Flow)</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-rev">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Prix actuel</div><div class="value" id="as-dcf-price">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-rev">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Valeur Intrinsèque</div><div class="value" id="as-dcf-fairvalue">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Prix Actuel</div><div class="value" id="as-dcf-price">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Marge de Sécurité</div><div class="value" id="as-dcf-margin">—</div></div>
           </div>
         </div>
-        <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">DCF Croissance BNA</div>
+
+        <div class="asset-sheet-section" style="margin-top: 15px;">
+          <div class="asset-sheet-section-title">Hypothèses du modèle (Salle des machines)</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-earn">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-earn">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">IRR estimé</div><div class="value" id="as-dcf-irr-earn">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Croissance FCF (1-5 ans)</div><div class="value" id="as-dcf-growth">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Taux d'actualisation (WACC)</div><div class="value" id="as-dcf-wacc">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Croissance Terminale</div><div class="value" id="as-dcf-terminal">2.50%</div></div>
           </div>
         </div>
-        <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">DCF Croissance FCF + Reverse DCF</div>
+
+        <div class="asset-sheet-section" style="margin-top: 15px;">
+          <div class="asset-sheet-section-title">Reverse DCF (Ce que le marché anticipe)</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-fcf">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-fcf">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Croissance impl.</div><div class="value" id="as-rdcf-implied">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Croissance Implicite</div><div class="value" id="as-dcf-revgrowth">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Rendement estimé (IRR)</div><div class="value" id="as-dcf-irr">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Météo du prix</div><div class="value" id="as-dcf-sentiment">—</div></div>
           </div>
         </div>
+
       </div>
 
       <!-- SEGMENTS -->
+      <!-- SEGMENTS -->
       <div class="asset-sheet-pane" id="assetPane-segments">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Segmentation des ventes</div>
-          <div class="asset-sheet-placeholder" style="height:220px">Diagramme Sankey géographie × segment à venir</div>
+          <div class="asset-sheet-section-title">Répartition du Chiffre d'Affaires par segment</div>
+          <div id="as-segments-chart" style="height: 300px; width: 100%;"></div>
+    
+          <!-- Liste détaillée en dessous -->
+          <div id="as-segments-list" style="margin-top: 20px; font-size: 0.85rem;"></div>
         </div>
       </div>
 

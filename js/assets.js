@@ -24,7 +24,7 @@ window.loadRandomAssetsFromDB = async function() {
     // ⚠️ REMPLACE 'assets' par le VRAI NOM de ta table contenant les infos des entreprises
     const { data, error } = await window.supabaseClient
       .from('assets') 
-      .select('ticker, name, isin, categorie'); // ⚠️ Vérifie que les noms de colonnes correspondent
+      .select('*');
 
     if (error || !data) throw error;
 
@@ -563,28 +563,104 @@ window.openAssetSheet = function(ticker, encodedName, isin) {
     el('as-div', fPct(assetData.dividend_yield));
     el('as-cap', fCap(assetData.market_cap));
     el('as-beta', fNum(assetData.beta));
-    el('as-eps', fNum(assetData.eps)); // 🌟 Ligne ajoutée pour le BNA (Bénéfice par action)
+    el('as-eps', fNum(assetData.eps)); 
     el('as-divgrowth', fPct(assetData.dividend_growth));
     
     // Description (on écrase le placeholder)
     el('as-description', assetData.description || 'Aucune description disponible pour cette entreprise.');
 
     // Onglet Valorisation
-    el('as-payout', fPct(assetData.payout_ratio)); // (Le payout ratio est bien dans cet onglet en HTML)
+    el('as-payout', fPct(assetData.payout_ratio)); 
     el('as-pb', fNum(assetData.price_to_book));
     el('as-ps', fNum(assetData.price_to_sales));
+    el('as-pfcf', fNum(assetData.price_to_fcf));
+    el('as-peg', fNum(assetData.peg_ratio));
+    el('as-evrev', fNum(assetData.ev_to_revenue));
     
     // Onglet Dividendes
     el('as-yield', fPct(assetData.dividend_yield));
+    el('as-divgrowth2', fPct(assetData.dividend_growth)); 
+    el('as-divamt', assetData.dividend_rate != null ? assetData.dividend_rate.toFixed(2) : '—');
+    el('as-freq', assetData.dividend_frequency || '—');
+    el('as-lastdiv', assetData.last_dividend_value != null ? assetData.last_dividend_value.toFixed(2) : '—');
+    
+    // Date Ex-Dividende 
+    if (assetData.ex_dividend_date) {
+        const d = new Date(assetData.ex_dividend_date);
+        el('as-exdiv', d.toLocaleDateString('fr-FR')); 
+    } else {
+        el('as-exdiv', '—');
+    }
+
+    // Onglet Finances
+    el('as-rev', fCap(assetData.total_revenue)); 
+    el('as-fcf', fCap(assetData.free_cash_flow)); 
+    el('as-ebitda', fCap(assetData.ebitda));
+
+    renderPEChart(ticker, currentEps, catColor);
+    renderDividendChart(ticker, catColor);
+    renderWaterfallChart(assetData);
+
+    // Onglet Croissance Annuelle
+    el('as-rev-growth', fPct(assetData.revenue_growth));
+    el('as-eps-growth', fPct(assetData.earnings_growth));
+    el('as-price-growth', fPct(assetData.price_growth));
+
+    renderGrowthChart(ticker);
     
     // Onglet Rentabilité
     el('as-roe', fPct(assetData.roe));
     el('as-opm', fPct(assetData.operating_margin));
-    el('as-npm', fPct(assetData.net_margin));
+    el('as-netmargin', fPct(assetData.profit_margins));
+
+    renderProfitabilityChart(assetData);
     
-    // Onglet Santé
-    el('as-shares', fCap(assetData.shares_outstanding)); //pour le nombre d'actions en circulation
-  }
+    // Onglet Santé Financière 
+    el('as-health-de', assetData.debt_to_equity != null ? (assetData.debt_to_equity / 100).toFixed(2) : '—');
+    el('as-health-debitebitda', assetData.debt_to_ebitda != null ? assetData.debt_to_ebitda.toFixed(2) + 'x' : '—');
+    el('as-health-ic', assetData.interest_coverage != null ? assetData.interest_coverage.toFixed(2) + 'x' : '—');
+    
+    el('as-current-ratio', assetData.current_ratio != null ? assetData.current_ratio.toFixed(2) : '—');
+    el('as-total-cash', fCap(assetData.total_cash));
+    el('as-total-debt', fCap(assetData.total_debt));
+
+    renderDebtEbitdaChart(ticker);
+
+    // Onglet DCF & Valorisation Avancée
+    if (assetData.dcf_fair_value) {
+        el('as-dcf-fairvalue', assetData.dcf_fair_value.toFixed(2) + ' $');
+        
+        // 🌟 CORRECTION 2 : On utilise la donnée de l'action pour le prix
+        const currentPrice = assetData.current_price || assetData.price || null;
+        el('as-dcf-price', currentPrice != null ? currentPrice.toFixed(2) + ' $' : '—');
+        
+        // Marge de sécurité 
+        const marginEl = document.getElementById('as-dcf-margin');
+        if (marginEl && assetData.dcf_margin != null) {
+            const marginPct = (assetData.dcf_margin * 100).toFixed(1);
+            marginEl.innerHTML = `<span style="color: ${assetData.dcf_margin > 0 ? 'var(--teal)' : 'var(--rose)'}; font-weight: 600;">${assetData.dcf_margin > 0 ? '+' : ''}${marginPct}%</span>`;
+        }
+
+        el('as-dcf-growth', fPct(assetData.dcf_growth_est));
+        el('as-dcf-wacc', fPct(assetData.dcf_wacc));
+        
+        el('as-dcf-revgrowth', fPct(assetData.dcf_reverse_growth));
+        el('as-dcf-irr', fPct(assetData.dcf_irr));
+
+        // Météo du prix 
+        const diffGrowth = assetData.dcf_reverse_growth - assetData.dcf_growth_est;
+        let sentiment = "Juste prix";
+        let sentColor = "var(--text)";
+        if (diffGrowth > 0.03) { sentiment = "Trop Optimiste"; sentColor = "var(--rose)"; } 
+        else if (diffGrowth < -0.03) { sentiment = "Opportunité (Pessimiste)"; sentColor = "var(--teal)"; }
+
+        const sentEl = document.getElementById('as-dcf-sentiment');
+        if (sentEl) sentEl.innerHTML = `<span style="color: ${sentColor}; font-weight: 600;">${sentiment}</span>`;
+
+    } else {
+        ['as-dcf-fairvalue', 'as-dcf-price', 'as-dcf-margin', 'as-dcf-growth', 'as-dcf-wacc', 'as-dcf-revgrowth', 'as-dcf-irr', 'as-dcf-sentiment'].forEach(id => el(id, 'N/A (FCF Négatif)'));
+    }
+  } // 🌟 CORRECTION 1 : Cette accolade ferme le "if (assetData) {", elle manquait !
 
   // 4. Reset tabs (Remet sur le premier onglet)
   overlay.querySelectorAll('.asset-sheet-tab').forEach((t, i) => {
@@ -596,7 +672,7 @@ window.openAssetSheet = function(ticker, encodedName, isin) {
 
   // 5. Affichage
   overlay.classList.add('open');
-};
+}; // 🌟 CORRECTION 1 (Suite) : C'est la fin propre de la fonction. Le "}" en trop en dessous a été supprimé.
 
 window.closeAssetSheet = function() {
   document.getElementById('assetSheetOverlay')?.classList.remove('open');
@@ -730,6 +806,236 @@ async function renderDividendChart(ticker, color) {
   } catch(e) {
     container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;">Historique des dividendes indisponible</div>';
   }
+}
+
+// ── Génération du graphique Cascade (Compte de résultat) ──
+function renderWaterfallChart(assetData) {
+  const container = document.getElementById('as-waterfall-chart');
+  if (!container) return;
+
+  // Si on n'a pas les données de base, on annule
+  if (!assetData.total_revenue || !assetData.net_income) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Données insuffisantes pour le graphique</div>';
+      return;
+  }
+
+  // Plotly gère les cascades de façon géniale : on lui donne les montants TOTAUX des paliers 
+  // (type: "absolute") et il calcule lui-même la différence (les coûts) entre chaque palier !
+  
+  const trace = {
+      type: "waterfall",
+      orientation: "v",
+      measure: [
+          "absolute", // Chiffre d'Affaires
+          "absolute", // Bénéfice Brut
+          "absolute", // EBITDA
+          "absolute", // EBIT
+          "absolute"  // Résultat Net
+      ],
+      x: ["C.A.", "Bénéfice Brut", "EBITDA", "EBIT", "Résultat Net"],
+      textposition: "outside",
+      
+      // On convertit tout en Milliards pour que ce soit lisible
+      y: [
+          assetData.total_revenue / 1e9,
+          assetData.gross_profit ? assetData.gross_profit / 1e9 : null,
+          assetData.ebitda ? assetData.ebitda / 1e9 : null,
+          assetData.operating_income ? assetData.operating_income / 1e9 : null,
+          assetData.net_income / 1e9
+      ],
+      connector: {
+        visible: false
+      },
+      decreasing: { marker: { color: "#e74c3c" } }, // Rouge pour les dépenses qui font baisser
+      increasing: { marker: { color: "#2d8a7a" } }, 
+      totals: { marker: { color: "#2980b9" } } // Bleu pour les paliers restants
+  };
+
+  container.innerHTML = '';
+
+  Plotly.newPlot(container, [trace], {
+      margin: { t: 20, r: 10, b: 30, l: 40 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent',
+      xaxis: { showgrid: false, tickfont: { size: 10, color: '#8a8278' } },
+      yaxis: { showgrid: true, gridcolor: '#e4dfd5', tickfont: { size: 10, color: '#8a8278' }, ticksuffix: " Md" },
+      showlegend: false
+  }, { displayModeBar: false, responsive: true });
+}
+
+// ── Génération du graphique Historique Croissance ──
+async function renderGrowthChart(ticker) {
+  const container = document.getElementById('as-growth-chart');
+  if (!container) return;
+
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Chargement de l\'historique...</div>';
+
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('financial_history')
+      .select('year, total_revenue, net_income')
+      .eq('ticker', ticker)
+      .order('year', { ascending: true }); // Du plus ancien au plus récent
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    const years = data.map(d => d.year);
+    // On divise par 1 milliard pour avoir des chiffres lisibles (Md$)
+    const revenues = data.map(d => d.total_revenue ? d.total_revenue / 1e9 : 0);
+    const incomes = data.map(d => d.net_income ? d.net_income / 1e9 : 0);
+
+    container.innerHTML = ''; 
+    
+    // On crée deux séries de barres : une pour le C.A., une pour le Bénéfice
+    const traceRev = {
+      x: years, y: revenues, name: "Chiffre d'affaires", type: 'bar', marker: { color: '#3466a0' }
+    };
+    const traceInc = {
+      x: years, y: incomes, name: "Bénéfice Net", type: 'bar', marker: { color: '#2d8a7a' }
+    };
+
+    Plotly.newPlot(container, [traceRev, traceInc], {
+      barmode: 'group', // 🌟 C'est ça qui met les barres côte à côte !
+      margin: { t:10, r:10, b:30, l:40 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, type: 'category' }, // category pour forcer l'affichage des années sans virgule
+      yaxis: { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, ticksuffix: " Md" },
+      showlegend: true,
+      legend: { orientation: "h", y: 1.1, font: {size: 10, color: '#8a8278'} }
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;">Historique indisponible</div>';
+  }
+}
+
+// ── Génération du graphique de Rentabilité (Entonnoir des Marges) ──
+function renderProfitabilityChart(assetData) {
+  const container = document.getElementById('as-profit-chart');
+  if (!container) return;
+
+  // S'il nous manque les données de marge, on affiche un petit message
+  if (!assetData.profit_margins && !assetData.operating_margin) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:0.75rem;font-style:italic;">Données de marges indisponibles</div>';
+      return;
+  }
+
+  // 1. Calcul de la marge brute (Bénéfice Brut / Chiffre d'Affaires)
+  let grossMargin = 0;
+  if (assetData.gross_profit && assetData.total_revenue) {
+      grossMargin = assetData.gross_profit / assetData.total_revenue;
+  }
+
+  // 2. Préparation des données (on multiplie par 100 pour l'affichage en %)
+  // On les met de bas en haut pour Plotly (Nette en bas, Brute en haut)
+  const xData = [
+      (assetData.profit_margins || 0) * 100,
+      (assetData.operating_margin || 0) * 100,
+      grossMargin * 100
+  ];
+  
+  const yData = ['Marge Nette', 'Marge Opérationnelle', 'Marge Brute'];
+
+  container.innerHTML = '';
+
+  const trace = {
+      x: xData,
+      y: yData,
+      type: 'bar',
+      orientation: 'h', // 🌟 Magique : met les barres à l'horizontale !
+      marker: {
+          // Un joli code couleur pour différencier les 3 étapes
+          color: ['#3466a0', '#2d8a7a', '#b38f4f'] 
+      },
+      hovertemplate: '<b>%{y}</b>: %{x:.1f}%<extra></extra>',
+      // On écrit le chiffre directement DANS la barre
+      text: xData.map(val => val ? val.toFixed(1) + '%' : ''),
+      textposition: 'auto',
+      insidetextanchor: 'middle'
+  };
+
+  Plotly.newPlot(container, [trace], {
+      // 🌟 1. On passe le 'r' (Right margin) de 20 à 80 pour laisser respirer l'infobulle
+      margin: { t: 20, r: 80, b: 30, l: 120 }, 
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent',
+      xaxis: { showgrid: true, gridcolor: '#e4dfd5', tickfont: { size: 10, color: '#8a8278' }, ticksuffix: '%' },
+      yaxis: { showgrid: false, tickfont: { size: 11, color: '#333' } },
+      showlegend: false,
+      
+      // 🌟 2. NOUVEAU : On personnalise l'infobulle au survol (Premium & lisible)
+      hoverlabel: {
+          bgcolor: '#2c3e50', // Un beau gris-bleu très sombre
+          font: { color: '#ffffff', size: 12 }, // Texte en blanc
+          bordercolor: 'transparent'
+      }
+  }, { displayModeBar: false, responsive: true });
+}
+
+// ── Génération du graphique Historique Dette vs EBITDA ──
+async function renderDebtEbitdaChart(ticker) {
+  const container = document.getElementById('as-debt-ebitda-chart');
+  if (!container) return;
+
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('financial_history')
+      .select('year, total_debt, ebitda')
+      .eq('ticker', ticker)
+      .order('year', { ascending: true });
+
+    if (error || !data || data.length === 0) throw new Error('no data');
+
+    const years = data.map(d => d.year);
+    const debts = data.map(d => d.total_debt ? d.total_debt / 1e9 : 0);
+    const ebitdas = data.map(d => d.ebitda ? d.ebitda / 1e9 : 0);
+
+    container.innerHTML = ''; 
+    
+    const traceEbitda = {
+      x: years, y: ebitdas, name: "EBITDA", type: 'bar', marker: { color: '#3466a0' }
+    };
+    const traceDebt = {
+      x: years, y: debts, name: "Dette Totale", type: 'bar', marker: { color: '#e74c3c' }
+    };
+
+    Plotly.newPlot(container, [traceEbitda, traceDebt], {
+      barmode: 'group',
+      margin: { t:10, r:10, b:30, l:40 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor:  'transparent',
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8a8278'}, type: 'category' },
+      yaxis: { showgrid:true, gridcolor:'#e4dfd5', tickfont:{size:10,color:'#8a8278'}, ticksuffix: " Md" },
+      showlegend: true,
+      legend: { orientation: "h", y: 1.1, font: {size: 10, color: '#8a8278'} }
+    }, { displayModeBar:false, responsive:true });
+
+  } catch(e) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted2);font-size:0.75rem;font-style:italic;">Historique indisponible</div>';
+  }
+}
+
+
+async function loadSegmentsForAsset(assetId) {
+    const { data, error } = await window.supabaseClient
+        .from('segments')
+        .select('*')
+        .eq('asset_id', assetId);
+
+    if (error) return console.error(error);
+    if (data && data.length > 0) {
+        renderSegmentsChart(data); // Utilise la fonction que nous avons écrite précédemment
+        
+        // Remplissage de la liste
+        const listEl = document.getElementById('as-segments-list');
+        listEl.innerHTML = data.map(s => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>${s.segment_name}</span>
+                <strong>${(s.revenue_val / 1e9).toFixed(2)} Md$</strong>
+            </div>
+        `).join('');
+    }
 }
 
 // Expose globally

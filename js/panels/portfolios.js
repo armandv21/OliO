@@ -1,4 +1,4 @@
-// ── Panneau Portefeuilles ────────────────────────────────────────────────────
+[Resource from github at repo://armandv21/OliO/sha/1a2d64daaeb704aa1dcf2e5a5eb1bd63e84c13f2/contents/js/panels/portfolios.js] // ── Panneau Portefeuilles ────────────────────────────────────────────────────
 // Requires: config.js (window.supabaseClient), optimization.js (appState, portfolioStats)
 
 
@@ -420,6 +420,21 @@ window.closePortfolioDetails = function() {
     }
 };
 
+
+// ── Normalise les tickers anciens ("ExxonMobilXOM" → "XOM") ──────────────
+function normalizeTicker(raw) {
+    if (!raw) return raw;
+    // Déjà un ticker propre (ex: AAPL, BRK-B, BRK.B)
+    if (/^[A-Z0-9.\-]{1,7}$/.test(raw)) return raw;
+    // Format "Apple (AAPL)" → "AAPL"
+    const parenMatch = raw.match(/\(([A-Z0-9.\-]{1,7})\)/);
+    if (parenMatch) return parenMatch[1];
+    // Format concaténé "ExxonMobilXOM" → extrait les majuscules finales
+    const upperMatch = raw.match(/([A-Z][A-Z0-9.\-]{1,5})$/);
+    if (upperMatch) return upperMatch[1];
+    return raw.trim().toUpperCase();
+}
+
 window.loadMyPortfolios = async function() {
     const container = document.getElementById('myPortfoliosList');
     if (!container) return;
@@ -447,7 +462,15 @@ window.loadMyPortfolios = async function() {
         }
 
         container.innerHTML = '';
-        portfolios.forEach(pf => renderPortfolioCard(pf, container));
+        portfolios.forEach(pf => {
+            if (Array.isArray(pf.composition)) {
+                pf.composition = pf.composition.map(c => ({
+                    ...c,
+                    ticker: normalizeTicker(c.ticker || '')
+                }));
+            }
+            renderPortfolioCard(pf, container);
+        });
 
     } catch (err) {
         console.error(err);

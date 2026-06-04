@@ -29,7 +29,7 @@
 <div id="authOverlay" class="auth-overlay hidden">
   <div class="auth-box" style="position: relative;">
     <button onclick="closeAuthModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted);">✕</button>
-    <img src="images/logo_olio.png" alt="OliO Logo" style="display: block; width: 120px; height: auto;" />
+    <img src="images/logo_olio.png" alt="OliO Logo" style="height:44px;width:auto;margin:0 auto 1.5rem;display:block;"/>
     
     <div id="authError" class="auth-error"></div>
     
@@ -236,90 +236,6 @@
         <button class="panel-nav-btn" id="btnPortefeuilles" onclick="openFullPanel('portefeuilles'); loadMyPortfolios();">Mes portefeuilles</button>
         
         <button class="btn-run" id="btnTopLogin" onclick="openAuthModal()" style="padding: 6px 16px; margin-left: 8px;">Connexion</button>
-        <div class="profile-wrap" id="profileWrap" style="display:none;">
-          <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
-          <div class="profile-dropdown" id="profileDropdown">
-            <div class="profile-dd-header">
-              <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
-              <div style="min-width:0">
-                <div class="profile-dd-name" id="profileDdName">Chargement…</div>
-                <div class="profile-dd-email" id="profileDdEmail"></div>
-              </div>
-            </div>
-            <div class="profile-dd-tabs">
-              <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
-              <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
-            </div>
-            <div class="profile-dd-pane active" id="pane-settings">
-              <div class="profile-setting-row">
-                <span class="profile-setting-label">Langue</span>
-                <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-              <div class="profile-setting-row">
-                <span class="profile-setting-label">Devise</span>
-                <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
-                  <option value="eur">EUR €</option>
-                  <option value="usd">USD $</option>
-                  <option value="gbp">GBP £</option>
-                  <option value="chf">CHF ₣</option>
-                </select>
-              </div>
-              <div class="profile-sim-row">
-                <div class="profile-sim-label">
-                  <span class="profile-setting-label">Simulations Monte Carlo</span>
-                  <span class="profile-sim-val" id="profileSimVal">6 000</span>
-                </div>
-                <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
-              </div>
-            </div>
-            <div class="profile-dd-pane" id="pane-account">
-              <div class="profile-section-label">Abonnement</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
-                <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
-                <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
-              </div>
-              <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
-              <div class="profile-section-label">Informations</div>
-              <div id="profileDisplayMode">
-                <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
-                <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
-                <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
-                <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
-                <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
-              </div>
-              <div id="profileEditMode" style="display:none;margin-top:10px;">
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
-                  <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Nom</span>
-                  <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
-                  <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
-                  <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
-                <div style="display:flex;gap:10px;margin-top:15px;">
-                  <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
-                  <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="content">
@@ -676,9 +592,8 @@
       </div>
     </div>
     <div id="articleReader" style="display:none;max-width:860px;margin:0 auto;padding:0 32px 60px">
-      <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s;margin-left:-24px" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">← Retour au catalogue</button>
+      <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s">← Retour aux articles</button>
       <div id="articleContent"></div>
-      <div id="articleNav"></div>
     </div>
   </div>
 </div>
@@ -749,7 +664,7 @@
       <div class="asset-sheet-pane" id="assetPane-price">
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Historique du cours</div>
-          <div id="as-price-chart" style="height:260px; width:100%;"></div>
+          <div class="asset-sheet-placeholder" style="height:220px">Graphique à venir</div>
         </div>
       </div>
 
@@ -762,13 +677,13 @@
             <div class="asset-sheet-kpi-card"><div class="label">Price/Sales</div><div class="value" id="as-ps">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Price/FCF</div><div class="value" id="as-pfcf">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">PEG</div><div class="value" id="as-peg">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">EV/Rev.</div><div class="value" id="as-evrev">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">EV/Rev.</div><div class="value" id="as-evr">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Payout Ratio</div><div class="value" id="as-payout">—</div></div>
           </div>
         </div>
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Historique P/E (Évolution sur 1 an)</div>
-          <div id="as-pe-chart" style="height:180px; width:100%;"></div>
+          <div class="asset-sheet-section-title">Historique P/E</div>
+          <div class="asset-sheet-placeholder" style="height:140px">Graphique à venir</div>
         </div>
       </div>
 
@@ -780,59 +695,46 @@
             <div class="asset-sheet-kpi-card"><div class="label">Rendement</div><div class="value" id="as-yield">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Fréquence</div><div class="value" id="as-freq">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Montant annuel</div><div class="value" id="as-divamt">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Dernier dividende</div><div class="value" id="as-lastdiv">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Années consec.</div><div class="value" id="as-divyears">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Ex-dividende</div><div class="value" id="as-exdiv">—</div></div>
             <div class="asset-sheet-kpi-card"><div class="label">Croissance 5a</div><div class="value" id="as-divgrowth2">—</div></div>
           </div>
         </div>
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Historique des versements</div>
-          <div id="as-div-chart" style="height:180px; width:100%;"></div>
+          <div class="asset-sheet-placeholder" style="height:160px">Graphique à venir</div>
         </div>
       </div>
 
+      <!-- FINANCES -->
       <div class="asset-sheet-pane" id="assetPane-financials">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Compte de résultat (12 derniers mois)</div>
-          <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Chiffre d'affaires</div><div class="value" id="as-rev">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Free Cash Flow</div><div class="value" id="as-fcf">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">EBITDA</div><div class="value" id="as-ebitda">—</div></div>
-          </div>
-
-          <div class="asset-sheet-section-title" style="margin-top: 25px;">Structure de rentabilité (Cascade)</div>
-          <div id="as-waterfall-chart" style="height: 250px; width: 100%;"></div>
+          <div class="asset-sheet-section-title">Compte de résultat</div>
+          <div class="asset-sheet-placeholder" style="height:160px">Graphiques CA · FCF/action · BNA à venir</div>
         </div>
       </div>
 
-      <!-- CROISSANCE ANNUELLE -->
+      <!-- CROISSANCE -->
       <div class="asset-sheet-pane" id="assetPane-growth">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Dynamique sur 1 an</div>
-          <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Croiss. Chiffre d'Affaires</div><div class="value" id="as-rev-growth">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Croiss. Bénéfice (BNA)</div><div class="value" id="as-eps-growth">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Performance Boursière</div><div class="value" id="as-price-growth">—</div></div>
-          </div>
-
-          <div class="asset-sheet-section-title" style="margin-top: 25px;">Historique Financier (4 ans)</div>
-          <div id="as-growth-chart" style="height:220px; width:100%;"></div>
-
+          <div class="asset-sheet-section-title">Croissance annuelle</div>
+          <div class="asset-sheet-placeholder" style="height:160px">Graphiques croissance CA · FCF · BNA à venir</div>
         </div>
       </div>
 
       <!-- RENTABILITÉ -->
       <div class="asset-sheet-pane" id="assetPane-profitability">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Ratios de rentabilité</div>
+          <div class="asset-sheet-section-title">Marges et retours</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">ROE (Retour sur capitaux)</div><div class="value" id="as-roe">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Marge Opérationnelle</div><div class="value" id="as-opm">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Marge Nette</div><div class="value" id="as-netmargin">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Marge opérat.</div><div class="value" id="as-opm">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Marge nette</div><div class="value" id="as-npm">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">ROE</div><div class="value" id="as-roe">—</div></div>
           </div>
-
-          <div class="asset-sheet-section-title" style="margin-top: 25px;">Décomposition des marges</div>
-          <div id="as-profit-chart" style="height: 220px; width: 100%;"></div>
+        </div>
+        <div class="asset-sheet-section">
+          <div class="asset-sheet-section-title">Historique</div>
+          <div class="asset-sheet-placeholder" style="height:140px">Graphiques à venir</div>
         </div>
       </div>
 
@@ -840,65 +742,54 @@
       <div class="asset-sheet-pane" id="assetPane-health">
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Ratios de solidité financière</div>
-          
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Dette / CP</div><div class="value" id="as-health-de">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Dette / EBITDA</div><div class="value" id="as-health-debitebitda">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Couv. Intérêts</div><div class="value" id="as-health-ic">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dette/CP</div><div class="value" id="as-de">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Dette/EBITDA</div><div class="value" id="as-debitda">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Couv. intérêts</div><div class="value" id="as-icr">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Ratio distrib.</div><div class="value" id="as-pr">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Ratio dist. FCF</div><div class="value" id="as-fcfpr">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Actions circ.</div><div class="value" id="as-shares">—</div></div>
           </div>
-          
-          <div class="asset-sheet-kpi-row" style="margin-top: 15px;">
-            <div class="asset-sheet-kpi-card"><div class="label">Ratio de liquidité</div><div class="value" id="as-current-ratio">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Trésorerie Totale</div><div class="value" id="as-total-cash">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Dette Totale</div><div class="value" id="as-total-debt">—</div></div>
-          </div>
-
-          <div class="asset-sheet-section-title" style="margin-top: 25px;">Historique Dette / EBITDA (4 ans)</div>
-          <div id="as-debt-ebitda-chart" style="height:220px; width:100%;"></div>
+        </div>
+        <div class="asset-sheet-section">
+          <div class="asset-sheet-section-title">Historique dette / EBITDA</div>
+          <div class="asset-sheet-placeholder" style="height:120px">Graphique à venir</div>
         </div>
       </div>
 
       <!-- DCF -->
       <div class="asset-sheet-pane" id="assetPane-dcf">
-        
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Valorisation Intrinsèque — Modèle DCF (Free Cash Flow)</div>
+          <div class="asset-sheet-section-title">Valorisation intrinsèque — DCF Croissance CA</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Valeur Intrinsèque</div><div class="value" id="as-dcf-fairvalue">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Prix Actuel</div><div class="value" id="as-dcf-price">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Marge de Sécurité</div><div class="value" id="as-dcf-margin">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-rev">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Prix actuel</div><div class="value" id="as-dcf-price">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-rev">—</div></div>
           </div>
         </div>
-
-        <div class="asset-sheet-section" style="margin-top: 15px;">
-          <div class="asset-sheet-section-title">Hypothèses du modèle (Salle des machines)</div>
+        <div class="asset-sheet-section">
+          <div class="asset-sheet-section-title">DCF Croissance BNA</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Croissance FCF (1-5 ans)</div><div class="value" id="as-dcf-growth">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Taux d'actualisation (WACC)</div><div class="value" id="as-dcf-wacc">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Croissance Terminale</div><div class="value" id="as-dcf-terminal">2.50%</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-earn">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-earn">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">IRR estimé</div><div class="value" id="as-dcf-irr-earn">—</div></div>
           </div>
         </div>
-
-        <div class="asset-sheet-section" style="margin-top: 15px;">
-          <div class="asset-sheet-section-title">Reverse DCF (Ce que le marché anticipe)</div>
+        <div class="asset-sheet-section">
+          <div class="asset-sheet-section-title">DCF Croissance FCF + Reverse DCF</div>
           <div class="asset-sheet-kpi-row">
-            <div class="asset-sheet-kpi-card"><div class="label">Croissance Implicite</div><div class="value" id="as-dcf-revgrowth">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Rendement estimé (IRR)</div><div class="value" id="as-dcf-irr">—</div></div>
-            <div class="asset-sheet-kpi-card"><div class="label">Météo du prix</div><div class="value" id="as-dcf-sentiment">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Valeur intrinsèque</div><div class="value" id="as-dcf-fv-fcf">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Décote / Surcote</div><div class="value" id="as-dcf-disc-fcf">—</div></div>
+            <div class="asset-sheet-kpi-card"><div class="label">Croissance impl.</div><div class="value" id="as-rdcf-implied">—</div></div>
           </div>
         </div>
-
       </div>
 
       <!-- SEGMENTS -->
-      <!-- SEGMENTS -->
       <div class="asset-sheet-pane" id="assetPane-segments">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Répartition du Chiffre d'Affaires par segment</div>
-          <div id="as-segments-chart" style="height: 300px; width: 100%;"></div>
-    
-          <!-- Liste détaillée en dessous -->
-          <div id="as-segments-list" style="margin-top: 20px; font-size: 0.85rem;"></div>
+          <div class="asset-sheet-section-title">Segmentation des ventes</div>
+          <div class="asset-sheet-placeholder" style="height:220px">Diagramme Sankey géographie × segment à venir</div>
         </div>
       </div>
 
@@ -927,6 +818,90 @@
   </div>
 </div>
 
+<div class="profile-wrap" id="profileWrap" style="display:none;">
+  <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
+  <div class="profile-dropdown" id="profileDropdown">
+    <div class="profile-dd-header">
+      <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
+      <div style="min-width:0">
+        <div class="profile-dd-name" id="profileDdName">Chargement…</div>
+        <div class="profile-dd-email" id="profileDdEmail"></div>
+      </div>
+    </div>
+    <div class="profile-dd-tabs">
+      <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
+      <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
+    </div>
+    <div class="profile-dd-pane active" id="pane-settings">
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Langue</span>
+        <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Devise</span>
+        <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
+          <option value="eur">EUR €</option>
+          <option value="usd">USD $</option>
+          <option value="gbp">GBP £</option>
+          <option value="chf">CHF ₣</option>
+        </select>
+      </div>
+      <div class="profile-sim-row">
+        <div class="profile-sim-label">
+          <span class="profile-setting-label">Simulations Monte Carlo</span>
+          <span class="profile-sim-val" id="profileSimVal">6 000</span>
+        </div>
+        <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
+      </div>
+    </div>
+    <div class="profile-dd-pane" id="pane-account">
+      <div class="profile-section-label">Abonnement</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
+        <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
+        <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
+      </div>
+      <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
+      <div class="profile-section-label">Informations</div>
+      <div id="profileDisplayMode">
+        <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
+        <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
+        <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
+        <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
+        <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
+      </div>
+      <div id="profileEditMode" style="display:none;margin-top:10px;">
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
+          <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Nom</span>
+          <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
+          <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
+          <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
+        <div style="display:flex;gap:10px;margin-top:15px;">
+          <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
+          <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="popup-overlay" id="savePortfolioPopup" onclick="if(event.target===this)closeSavePortfolio()">
   <div class="popup-box" style="max-width:380px;width:90%">
@@ -971,22 +946,47 @@
 <div class="popup-overlay hidden" id="premiumModal" onclick="if(event.target===this)closePremiumModal()">
   <div class="popup-box" style="max-width:420px; width:90%; text-align:center;">
     <button class="popup-close" onclick="closePremiumModal()" title="Fermer">✕</button>
-    
+
     <div style="padding:36px 28px 28px;">
       <img src="images/logo_olio.png" alt="OliO Logo" style="height: 44px; width: auto; margin: 0 auto 16px; display: block;" />
-      
+
       <div style="font-family:var(--font-serif); font-size:1.35rem; font-weight:700; color:var(--ink); margin-bottom:12px;">
         Passez au Premium
       </div>
-      
+
       <div style="font-family:var(--font-sans); font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:24px;">
         Vous avez atteint la limite de <strong>3 actifs</strong> de la version gratuite.<br>
         Débloquez la sélection illimitée pour construire des portefeuilles avancés.
       </div>
-      
+
       <button onclick="window.location.href='/premium'" style="width:100%; padding:12px; background:var(--blue); color:white; border:none; border-radius:6px; font-family:var(--font-sans); font-size:0.8rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
         Découvrir les offres
       </button>
+    </div>
+  </div>
+</div>
+
+<div class="popup-overlay hidden" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+  <div class="popup-box" style="max-width:380px;width:90%">
+    <button class="popup-close" onclick="closeConfirmModal()" title="Fermer">✕</button>
+    <div style="padding:28px 28px 24px">
+      <div id="confirmModalTitle" style="font-family:var(--font-serif);font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:8px"></div>
+      <div id="confirmModalMessage" style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;line-height:1.6"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeConfirmModal()" style="flex:1;padding:10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--ink2);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">Annuler</button>
+        <button id="confirmModalBtn" style="flex:1;padding:10px;background:var(--rose);color:white;border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Confirmer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="popup-overlay hidden" id="alertModal" onclick="if(event.target===this)closeAlertModal()">
+  <div class="popup-box" style="max-width:360px;width:90%">
+    <button class="popup-close" onclick="closeAlertModal()" title="Fermer">✕</button>
+    <div style="padding:28px 28px 24px">
+      <div id="alertModalTitle" style="font-family:var(--font-serif);font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:8px"></div>
+      <div id="alertModalMessage" style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;line-height:1.6"></div>
+      <button onclick="closeAlertModal()" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">OK</button>
     </div>
   </div>
 </div>
@@ -1002,10 +1002,9 @@
 <script src="js/charts/cml.js"></script>
 <script src="js/charts/risk.js"></script>
 <script src="js/charts/correlation.js"></script>
-
+<script src="js/panels/articles.js"></script>
 <script src="js/panels/portfolios.js"></script>
 <script src="js/data/articles.js"></script>
-<script src="js/panels/articles.js"></script>
 <script src="js/app.js"></script>
 <script src="js/stripe.js"></script>
 </body>

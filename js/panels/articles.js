@@ -21,21 +21,27 @@
     const prevId = idx > 0 ? ids[idx - 1] : null;
     const nextId = idx < ids.length - 1 ? ids[idx + 1] : null;
 
-    const btnBase = `flex:1;text-align:{ALIGN};background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;cursor:pointer;font-family:var(--font-sans);transition:border-color 0.15s;`;
+    const prevBtn = prevId ? `
+      <button onclick="openArticle(${prevId})"
+        style="flex:1;text-align:left;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal-lt);border-radius:8px;padding:16px 20px;cursor:pointer;font-family:var(--font-sans);transition:all 0.18s;"
+        onmouseover="this.style.background='var(--surface2)';this.style.borderLeftColor='var(--teal)'"
+        onmouseout="this.style.background='var(--surface)';this.style.borderLeftColor='var(--teal-lt)'">
+        <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--teal);margin-bottom:6px">← Article précédent</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--ink);line-height:1.35">${_getArticleTitle(prevId)}</div>
+      </button>` : `<div style="flex:1"></div>`;
+
+    const nextBtn = nextId ? `
+      <button onclick="openArticle(${nextId})"
+        style="flex:1;text-align:right;background:var(--surface);border:1px solid var(--border);border-right:3px solid var(--blue);border-radius:8px;padding:16px 20px;cursor:pointer;font-family:var(--font-sans);transition:all 0.18s;"
+        onmouseover="this.style.background='var(--surface2)';this.style.borderRightColor='var(--blue-lt)'"
+        onmouseout="this.style.background='var(--surface)';this.style.borderRightColor='var(--blue)'">
+        <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue);margin-bottom:6px">Article suivant →</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--ink);line-height:1.35">${_getArticleTitle(nextId)}</div>
+      </button>` : `<div style="flex:1"></div>`;
+
     navEl.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:stretch;gap:16px;margin-top:48px;padding-top:32px;border-top:1px solid var(--border)">
-        ${prevId
-          ? `<button onclick="openArticle(${prevId})" style="${btnBase.replace('{ALIGN}','left')}" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
-               <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">← Article précédent</div>
-               <div style="font-size:0.85rem;font-weight:600;color:var(--ink);line-height:1.35">${_getArticleTitle(prevId)}</div>
-             </button>`
-          : `<div style="flex:1"></div>`}
-        ${nextId
-          ? `<button onclick="openArticle(${nextId})" style="${btnBase.replace('{ALIGN}','right')}" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
-               <div style="font-size:0.6rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Article suivant →</div>
-               <div style="font-size:0.85rem;font-weight:600;color:var(--ink);line-height:1.35">${_getArticleTitle(nextId)}</div>
-             </button>`
-          : `<div style="flex:1"></div>`}
+        ${prevBtn}${nextBtn}
       </div>`;
   }
 

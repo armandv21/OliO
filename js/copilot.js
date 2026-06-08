@@ -127,7 +127,21 @@
     }
   }
 
-  // ── Execute portfolio action in the app ───────────────────────────────────
+  // ── Execute save action ───────────────────────────────────────────────────
+  function executeSaveAction(action) {
+    if (typeof window.openSavePortfolio === 'function') {
+      window.openSavePortfolio('cml');
+      setTimeout(function () {
+        var ni = document.getElementById('savePortfolioName');
+        if (ni) { ni.value = action.name || ''; ni.focus(); }
+      }, 300);
+    } else {
+      // Fallback: direct Supabase save not possible from here — just open dialog
+      appendMsg('assistant', 'Pour enregistrer, cliquez sur le bouton <strong>Enregistrer le portefeuille</strong> dans l&#39;onglet CML.');
+    }
+  }
+
+  // ── Execute portfolio launch action ───────────────────────────────────────
   async function executePortfolioAction(action) {
     var tickers = action.tickers || [];
     if (tickers.length === 0) return;
@@ -142,8 +156,14 @@
     var rfInput = document.getElementById('homeRfInput');
     if (rfInput && action.rf !== undefined) rfInput.value = (action.rf * 100).toFixed(1);
 
+    // Show follow-up message before closing
+    appendMsg('assistant',
+      '&#x23F3; Simulation en cours dans l&#39;app&hellip; Revenez me parler une fois les r&eacute;sultats affich&eacute;s pour <strong>discuter du niveau de risque</strong> et <strong>enregistrer le portefeuille</strong>.'
+    );
+
+    await new Promise(function (r) { setTimeout(r, 2200); });
     window._copilotClose();
-    await new Promise(function (r) { setTimeout(r, 350); });
+    await new Promise(function (r) { setTimeout(r, 300); });
 
     if (typeof window.applyPortfolio === 'function') {
       var w = 1 / tickers.length;
@@ -161,18 +181,6 @@
       var sc = document.getElementById('selectedCount');
       if (sc) sc.textContent = tickers.length;
       setTimeout(function () { if (typeof runOptimization === 'function') runOptimization(); }, 800);
-    }
-
-    if (action.save && action.portfolio_name) {
-      setTimeout(function () {
-        if (typeof window.openSavePortfolio === 'function') {
-          window.openSavePortfolio('cml');
-          setTimeout(function () {
-            var ni = document.getElementById('savePortfolioName');
-            if (ni) { ni.value = action.portfolio_name; ni.focus(); }
-          }, 300);
-        }
-      }, 7000);
     }
   }
 
@@ -221,6 +229,11 @@
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);
         await executePortfolioAction(data.action);
+      } else if (data.action && data.action.type === 'save_portfolio') {
+        appendMsg('assistant', renderMd(data.reply), true);
+        conversation.push({ role: 'assistant', content: data.reply });
+        if (conversation.length > 20) conversation = conversation.slice(-20);
+        executeSaveAction(data.action);
       } else {
         appendMsg('assistant', renderMd(data.reply));
         conversation.push({ role: 'assistant', content: data.reply });

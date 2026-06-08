@@ -6,86 +6,119 @@
   var isLoading = false;
   var isAutopilot = false;
 
+  // ── Markdown renderer (safe — escapes HTML first) ──────────────────────────
+  function renderMd(raw) {
+    var s = raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Bold + italic
+    s = s.replace(/\*\*\*([^*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    // Inline code
+    s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.08);padding:1px 4px;border-radius:3px;font-size:0.88em">$1</code>');
+    // Numbered lists
+    s = s.replace(/(^|\n)(\d+)\. /g, '$1<span style="color:var(--blue);font-weight:700">$2.</span> ');
+    // Bullet lists
+    s = s.replace(/(^|\n)[•\-] /g, '$1<span style="color:var(--blue);font-weight:700">·</span> ');
+    // Double newline = paragraph break
+    s = s.replace(/\n\n+/g, '<br><br>');
+    // Single newline
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
   function getUserProfile() {
     if (window._profileData) {
-      return {
-        pseudo: window._profileData.pseudo || '',
-        abonnement: window._profileData.abonnement || 'gratuit',
-      };
+      return { pseudo: window._profileData.pseudo || '', abonnement: window._profileData.abonnement || 'gratuit' };
     }
     return null;
   }
 
   function createWidget() {
+    // ── FAB ──
     var fab = document.createElement('button');
     fab.id = 'copilotFab';
     fab.title = 'Copilote OliO';
     fab.setAttribute('aria-label', 'Ouvrir le copilote OliO');
     fab.innerHTML = '&#9672;';
-    fab.style.cssText = [
-      'position:fixed', 'bottom:76px', 'right:24px',
-      'width:46px', 'height:46px', 'border-radius:50%',
-      'background:var(--blue)', 'color:white', 'border:none',
-      'font-size:1.2rem', 'cursor:pointer', 'z-index:8900',
-      'box-shadow:0 4px 16px rgba(0,0,0,0.20)',
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'transition:transform 0.18s, box-shadow 0.18s',
-      'font-family:var(--font-sans)'
-    ].join(';');
+    fab.style.cssText = 'position:fixed;bottom:76px;right:24px;width:46px;height:46px;border-radius:50%;background:var(--blue);color:white;border:none;font-size:1.2rem;cursor:pointer;z-index:8900;box-shadow:0 4px 16px rgba(0,0,0,0.20);display:flex;align-items:center;justify-content:center;transition:transform 0.18s;font-family:var(--font-sans)';
     fab.onmouseover = function () { this.style.transform = 'scale(1.08)'; };
     fab.onmouseout = function () { this.style.transform = ''; };
     fab.onclick = toggleCopilot;
     document.body.appendChild(fab);
 
+    // ── Panel ──
     var panel = document.createElement('div');
     panel.id = 'copilotPanel';
-    panel.style.cssText = [
-      'position:fixed', 'bottom:132px', 'right:24px',
-      'width:360px', 'max-height:520px',
-      'background:var(--surface)', 'border:1px solid var(--border)',
-      'border-radius:16px', 'box-shadow:0 8px 32px rgba(0,0,0,0.16)',
-      'z-index:8900', 'display:none', 'flex-direction:column',
-      'font-family:var(--font-sans)', 'overflow:hidden'
-    ].join(';');
+    panel.style.cssText = 'position:fixed;bottom:132px;right:24px;width:380px;max-height:560px;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.18);z-index:8900;display:none;flex-direction:column;font-family:var(--font-sans);overflow:hidden';
+
     panel.innerHTML = [
-      '<div id="copilotHeader" style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:space-between;background:var(--blue);border-radius:15px 15px 0 0;">',
-        '<div style="display:flex;align-items:center;gap:10px;">',
-          '<span style="color:white;font-size:1.1rem;">&#9672;</span>',
+      // Header
+      '<div id="copilotHeader" style="padding:13px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--blue);border-radius:17px 17px 0 0;flex-shrink:0">',
+        '<div style="display:flex;align-items:center;gap:9px">',
+          '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1rem;color:white">&#9672;</div>',
           '<div>',
-            '<div style="color:white;font-weight:600;font-size:0.85rem;letter-spacing:0.02em;">Copilote OliO</div>',
-            '<div id="copilotSubtitle" style="color:rgba(255,255,255,0.72);font-size:0.62rem;">Finance · App · Risque</div>',
+            '<div style="color:white;font-weight:700;font-size:0.88rem;letter-spacing:0.01em">Copilote OliO</div>',
+            '<div id="copilotSubtitle" style="color:rgba(255,255,255,0.65);font-size:0.65rem;margin-top:1px">Finance · App · Risque</div>',
           '</div>',
         '</div>',
-        '<div style="display:flex;align-items:center;gap:6px;">',
-          '<button id="copilotAutoBtn" onclick="window._copilotToggleAuto()" title="Mode Autopilote — le LLM agit directement sur l\'app"',
-            ' style="background:none;border:1px solid rgba(255,255,255,0.35);color:rgba(255,255,255,0.80);cursor:pointer;font-size:0.6rem;padding:3px 8px;border-radius:10px;line-height:1.5;transition:all 0.15s;font-family:var(--font-sans);letter-spacing:0.05em;font-weight:600;">',
-            '&#9889; AUTO',
+        '<div style="display:flex;align-items:center;gap:7px">',
+          '<button id="copilotAutoBtn" onclick="window._copilotToggleAuto()" title="Mode Autopilote"',
+            ' style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.75);cursor:pointer;font-size:0.6rem;padding:4px 9px;border-radius:12px;font-family:var(--font-sans);font-weight:700;letter-spacing:0.06em;transition:all 0.15s">',
+            '&#9889;&nbsp;AUTO',
           '</button>',
-          '<button onclick="window._copilotClose()" style="background:none;border:none;color:rgba(255,255,255,0.85);cursor:pointer;font-size:1rem;padding:4px;line-height:1;">&#x2715;</button>',
+          '<button onclick="window._copilotClose()" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:background 0.15s" onmouseover="this.style.background=\'rgba(255,255,255,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.12)\'">&#x2715;</button>',
         '</div>',
       '</div>',
-      '<div id="copilotMessages" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:360px;">',
-        '<div style="background:var(--surface2);padding:11px 13px;border-radius:10px 10px 10px 2px;font-size:0.79rem;color:var(--ink);line-height:1.55;max-width:88%;">',
-          'Bonjour ! Je suis le copilote OliO. Posez-moi vos questions sur les concepts financiers, la navigation dans l’app, l’analyse d’entreprises ou votre profil de risque.',
-        '</div>',
-        '<div style="background:var(--surface2);padding:9px 12px;border-radius:10px;font-size:0.72rem;color:var(--muted);line-height:1.5;max-width:96%;border:1px dashed var(--border2);">',
-          '<b style="color:var(--ink);">&#9889; Mode Autopilote</b> — Activez AUTO pour que le LLM lance directement les simulations. Ex : « crée un portefeuille avec 5 actions CAC 40 »',
-        '</div>',
+      // Messages
+      '<div id="copilotMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:400px;scroll-behavior:smooth">',
+        _welcomeMsg(),
       '</div>',
-      '<div style="padding:10px 14px;border-top:1px solid var(--border);">',
-        '<div style="display:flex;gap:7px;">',
+      // Input area
+      '<div style="padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0">',
+        '<div style="display:flex;gap:8px;align-items:center">',
           '<input id="copilotInput" type="text" placeholder="Posez votre question…"',
-            ' style="flex:1;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;font-family:var(--font-sans);font-size:0.79rem;color:var(--ink);outline:none;"',
+            ' style="flex:1;padding:9px 13px;background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;font-family:var(--font-sans);font-size:0.8rem;color:var(--ink);outline:none;transition:border-color 0.15s"',
+            ' onfocus="this.style.borderColor=\'var(--blue)\'" onblur="this.style.borderColor=\'var(--border2)\'"',
             ' onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();window._copilotSend();}"/>',
           '<button id="copilotSendBtn" onclick="window._copilotSend()"',
-            ' style="padding:9px 13px;background:var(--blue);color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:opacity 0.15s;flex-shrink:0;">',
+            ' style="width:36px;height:36px;flex-shrink:0;background:var(--blue);color:white;border:none;border-radius:10px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s">',
             '&#8594;',
           '</button>',
         '</div>',
-        '<div style="font-size:0.59rem;color:var(--muted);margin-top:5px;text-align:center;">Propulsé par Groq · Llama 3.3 70B</div>',
+        '<div style="font-size:0.58rem;color:var(--muted);margin-top:6px;text-align:center;letter-spacing:0.02em">Propulsé par Groq · Llama 3.3 70B</div>',
       '</div>'
     ].join('');
     document.body.appendChild(panel);
+  }
+
+  function _welcomeMsg() {
+    return [
+      '<div style="' + _bubbleStyle('bot') + '">',
+        'Bonjour ! Je suis le copilote OliO. Posez-moi vos questions sur les concepts financiers, la navigation dans l'app ou votre profil de risque.',
+        '<div style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,0.04);border-radius:7px;font-size:0.72rem;color:var(--muted);line-height:1.45">',
+          '<strong style="color:var(--ink)">&#9889; Mode Autopilote</strong><br>Activez AUTO pour que je construise votre portefeuille en vous posant des questions, puis que je lance les simulations directement.',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  function _bubbleStyle(role, isAction) {
+    var base = 'padding:10px 13px;border-radius:';
+    if (isAction) return base + '12px;font-size:0.78rem;line-height:1.6;max-width:90%;word-break:break-word;background:rgba(34,197,94,0.08);color:var(--ink);align-self:flex-start;border:1.5px solid rgba(34,197,94,0.25)';
+    if (role === 'bot') return base + '4px 14px 14px 14px;font-size:0.78rem;line-height:1.6;max-width:90%;word-break:break-word;background:var(--surface2);color:var(--ink);align-self:flex-start';
+    return base + '14px 4px 14px 14px;font-size:0.78rem;line-height:1.6;max-width:80%;word-break:break-word;background:var(--blue);color:white;align-self:flex-end';
+  }
+
+  function appendMsg(role, html, isAction) {
+    var container = document.getElementById('copilotMessages');
+    if (!container) return null;
+    var el = document.createElement('div');
+    el.style.cssText = _bubbleStyle(role === 'assistant' ? 'bot' : role, isAction);
+    el.innerHTML = html;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return el;
   }
 
   function toggleCopilot() {
@@ -93,10 +126,7 @@
     var panel = document.getElementById('copilotPanel');
     if (!panel) return;
     panel.style.display = isOpen ? 'flex' : 'none';
-    if (isOpen) {
-      var inp = document.getElementById('copilotInput');
-      if (inp) inp.focus();
-    }
+    if (isOpen) { var inp = document.getElementById('copilotInput'); if (inp) inp.focus(); }
   }
 
   function toggleAutopilot() {
@@ -104,104 +134,71 @@
     var btn = document.getElementById('copilotAutoBtn');
     var subtitle = document.getElementById('copilotSubtitle');
     if (btn) {
-      btn.style.background = isAutopilot ? 'rgba(255,255,255,0.25)' : 'none';
-      btn.style.color = isAutopilot ? 'white' : 'rgba(255,255,255,0.80)';
-      btn.style.borderColor = isAutopilot ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)';
+      btn.style.background = isAutopilot ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.12)';
+      btn.style.color = isAutopilot ? 'white' : 'rgba(255,255,255,0.75)';
+      btn.style.borderColor = isAutopilot ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)';
     }
-    if (subtitle) {
-      subtitle.textContent = isAutopilot ? '⚡ Autopilote actif' : 'Finance · App · Risque';
-    }
+    if (subtitle) subtitle.textContent = isAutopilot ? '⚡ Autopilote actif' : 'Finance · App · Risque';
     if (isAutopilot) {
-      appendMessage('assistant', '⚡ Mode Autopilote activé. Dites-moi quel portefeuille créer : actifs, secteur, nombre de valeurs, horizon… Je poserai des questions si nécessaire puis lancerai la simulation directement.');
+      appendMsg('assistant', '&#9889; <strong>Mode Autopilote activé.</strong><br>Dites-moi quel portefeuille vous souhaitez créer. Je vais vous poser quelques questions pour affiner la sélection ensemble, puis lancer la simulation directement dans l'app.');
     }
   }
 
-  function buildMsgEl(role, content, isAction) {
-    var el = document.createElement('div');
-    var isBot = role === 'assistant';
-    el.style.cssText = [
-      'padding:11px 13px',
-      'border-radius:' + (isBot ? '10px 10px 10px 2px' : '10px 10px 2px 10px'),
-      'font-size:0.79rem', 'line-height:1.55', 'max-width:88%', 'word-break:break-word',
-      'background:' + (isAction ? '#1a3a1a' : isBot ? 'var(--surface2)' : 'var(--blue)'),
-      'color:' + (isAction ? '#4ade80' : isBot ? 'var(--ink)' : 'white'),
-      'align-self:' + (isBot ? 'flex-start' : 'flex-end'),
-      isAction ? 'border:1px solid #2d5a2d' : ''
-    ].join(';');
-    el.textContent = content;
-    return el;
-  }
-
-  function appendMessage(role, content, isAction) {
-    var container = document.getElementById('copilotMessages');
-    if (!container) return null;
-    var el = buildMsgEl(role, content, isAction);
-    container.appendChild(el);
-    container.scrollTop = container.scrollHeight;
-    return el;
-  }
-
+  // ── Execute action in the app ─────────────────────────────────────────────
   async function executePortfolioAction(action) {
     var tickers = action.tickers || [];
     if (tickers.length === 0) return;
 
-    // Set period and rf on appState before running
+    // Update appState params before running
     if (typeof appState !== 'undefined') {
       if (action.period) appState.period = action.period;
       if (action.rf !== undefined) appState.rf = action.rf;
     }
-    // Sync DOM inputs
     var pmap = { '1y': 1, '2y': 2, '5y': 5 };
     var pInput = document.getElementById('homePeriodInput');
     if (pInput && action.period) pInput.value = pmap[action.period] || 2;
     var rfInput = document.getElementById('homeRfInput');
     if (rfInput && action.rf !== undefined) rfInput.value = (action.rf * 100).toFixed(1);
 
-    // Build composition (equal weights — optimization will find optimal weights)
-    var w = 1 / tickers.length;
-    var composition = tickers.map(function (t) { return { ticker: t, weight: w }; });
-
-    // Close copilot panel
+    // Close copilot
     window._copilotClose();
-    await new Promise(function (r) { setTimeout(r, 300); });
+    await new Promise(function (r) { setTimeout(r, 350); });
 
+    // Prefer the official applyPortfolio function
     if (typeof window.applyPortfolio === 'function') {
-      window.applyPortfolio(composition);
+      var w = 1 / tickers.length;
+      window.applyPortfolio(tickers.map(function (t) { return { ticker: t, weight: w }; }));
     } else {
-      // Fallback: direct state manipulation
+      // Fallback
       if (typeof appState !== 'undefined') appState.selected.clear();
       document.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-        var match = tickers.indexOf(cb.value) !== -1;
-        cb.checked = match;
-        if (match) {
+        var hit = tickers.indexOf(cb.value) !== -1;
+        cb.checked = hit;
+        if (hit) {
           cb.dispatchEvent(new Event('change', { bubbles: true }));
           if (typeof appState !== 'undefined') appState.selected.add(cb.value);
         }
       });
       var sc = document.getElementById('selectedCount');
       if (sc) sc.textContent = tickers.length;
-      setTimeout(function () {
-        if (typeof runOptimization === 'function') runOptimization();
-      }, 800);
+      setTimeout(function () { if (typeof runOptimization === 'function') runOptimization(); }, 800);
     }
 
-    // Auto-save: after optimization completes (~6s), pre-fill save dialog
+    // Auto-open save dialog after optimization (~7s)
     if (action.save && action.portfolio_name) {
       setTimeout(function () {
         if (typeof window.openSavePortfolio === 'function') {
           window.openSavePortfolio('cml');
           setTimeout(function () {
-            var nameInput = document.getElementById('savePortfolioName');
-            if (nameInput) {
-              nameInput.value = action.portfolio_name;
-              nameInput.focus();
-            }
+            var ni = document.getElementById('savePortfolioName');
+            if (ni) { ni.value = action.portfolio_name; ni.focus(); }
           }, 300);
         }
       }, 7000);
     }
   }
 
+  // ── Send message ──────────────────────────────────────────────────────────
   async function sendMessage() {
     if (isLoading) return;
     var input = document.getElementById('copilotInput');
@@ -210,13 +207,15 @@
     if (!msg) return;
     input.value = '';
 
-    appendMessage('user', msg);
+    appendMsg('user', renderMd(msg));
     conversation.push({ role: 'user', content: msg });
 
     isLoading = true;
     var sendBtn = document.getElementById('copilotSendBtn');
-    if (sendBtn) sendBtn.disabled = true;
-    var loadingEl = appendMessage('assistant', '…');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.5'; }
+
+    // Typing indicator
+    var typing = appendMsg('assistant', '<span style="letter-spacing:2px;opacity:0.5">•&nbsp;•&nbsp;•</span>');
 
     try {
       var resp = await fetch(BACKEND + '/copilot', {
@@ -232,40 +231,39 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       var data = await resp.json();
 
+      if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+
       if (data.action && data.action.type === 'launch_portfolio') {
-        // Autopilot action: show action message and execute
-        if (loadingEl) {
-          loadingEl.textContent = '⚡ ' + data.reply;
-          loadingEl.style.background = '#1a3a1a';
-          loadingEl.style.color = '#4ade80';
-          loadingEl.style.border = '1px solid #2d5a2d';
-        }
+        var tickers = data.action.tickers || [];
+        var preview = tickers.join(' · ');
+        var html = '&#9889; <strong>Lancement !</strong><br>' + renderMd(data.reply)
+          + '<div style="margin-top:8px;padding:7px 10px;background:rgba(34,197,94,0.1);border-radius:7px;font-size:0.72rem;color:var(--ink);letter-spacing:0.01em">'
+          + '&#10003; Actifs sélectionnés : <strong>' + preview + '</strong></div>';
+        appendMsg('assistant', html, true);
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);
         await executePortfolioAction(data.action);
       } else {
-        if (loadingEl) loadingEl.textContent = data.reply;
+        appendMsg('assistant', renderMd(data.reply));
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);
       }
     } catch (e) {
-      if (loadingEl) {
-        loadingEl.textContent = 'Désolé, une erreur est survenue. Vérifiez votre connexion et réessayez.';
-        loadingEl.style.color = 'var(--rose-lt)';
-      }
+      if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+      appendMsg('assistant', '<span style="color:var(--rose-lt)">Désolé, une erreur est survenue. Vérifiez votre connexion et réessayez.</span>');
       conversation.pop();
     }
 
     isLoading = false;
-    if (sendBtn) sendBtn.disabled = false;
-    var container = document.getElementById('copilotMessages');
-    if (container) container.scrollTop = container.scrollHeight;
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+    var c = document.getElementById('copilotMessages');
+    if (c) c.scrollTop = c.scrollHeight;
   }
 
   window._copilotClose = function () {
     isOpen = false;
-    var panel = document.getElementById('copilotPanel');
-    if (panel) panel.style.display = 'none';
+    var p = document.getElementById('copilotPanel');
+    if (p) p.style.display = 'none';
   };
   window._copilotSend = sendMessage;
   window._copilotToggleAuto = toggleAutopilot;

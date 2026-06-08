@@ -1,6 +1,7 @@
 // ── Panneau Articles ─────────────────────────────────────────────────────────
 
 const _ARTICLES_PAGE_SIZE = 30;
+const _FREE_ARTICLES_LIMIT = 6;
 
 let _currentArticleId = null;
 let _articlesLoaded   = [];
@@ -45,22 +46,24 @@ function _buildCardHtml(a, isMod) {
   const niveauColor = a.niveau === 'Intermédiaire' ? 'var(--amber)' : a.niveau === 'Avancé' ? 'var(--rose)' : 'var(--teal)';
   const niveauBg    = a.niveau === 'Intermédiaire' ? 'rgba(138,90,0,0.08)' : a.niveau === 'Avancé' ? 'rgba(122,31,46,0.08)' : 'rgba(26,92,82,0.08)';
   const safeTitle   = (a.titre || '').replace(/'/g, "\\'");
+  const locked      = !isMod && (a.ordre || a.id) > _FREE_ARTICLES_LIMIT && !(typeof window.isUserPremium === 'function' && window.isUserPremium());
 
   return `
     <div style="position:relative;">
       <button onclick="openArticle(${a.id})"
-        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);${locked ? 'opacity:0.72;' : ''}"
         onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
-        <div style="width:52px;height:52px;border-radius:12px;background:${a.gradient};display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">${a.icone}</div>
+        <div style="width:52px;height:52px;border-radius:12px;background:${a.gradient};display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">${locked ? '🔒' : a.icone}</div>
         <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${a.categorie}</div>
         <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">${a.titre}</div>
         <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">${a.resume}</p>
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">${a.duree}</span>
           <span style="font-size:0.68rem;color:${niveauColor};background:${niveauBg};padding:3px 8px;border-radius:20px">${a.niveau}</span>
+          ${locked ? `<span style="font-size:0.68rem;font-weight:700;color:var(--amber);background:rgba(138,90,0,0.1);padding:3px 8px;border-radius:20px;letter-spacing:0.04em;">✦ Pro</span>` : ''}
         </div>
-        <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:${colorVar};letter-spacing:0.04em">Lire l'article →</div>
+        <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:${locked ? 'var(--muted)' : colorVar};letter-spacing:0.04em">${locked ? 'Accès Pro requis →' : 'Lire l\'article →'}</div>
       </button>
       ${isMod ? `
       <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2;">
@@ -322,6 +325,44 @@ function _renderArticleNav(id) {
     </div>`;
 }
 
+// ── Paywall upgrade modal ──────────────────────────────────────────────────
+function _showArticleUpgradeModal() {
+  let modal = document.getElementById('articlePaywallModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'articlePaywallModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px 36px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;">
+        <button onclick="document.getElementById('articlePaywallModal').style.display='none'"
+          style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;color:var(--muted);cursor:pointer;line-height:1;"
+          onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">×</button>
+        <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#8a5a00,#c4820a);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.6rem;">✦</div>
+        <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:700;color:var(--ink);margin-bottom:10px;">Contenu Pro</h2>
+        <p style="font-size:0.88rem;color:var(--muted);line-height:1.65;margin-bottom:28px;">Cet article fait partie de la bibliothèque complète, accessible aux abonnés Pro. Les 6 premiers articles sont gratuits.</p>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:28px;text-align:left;">
+          <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Avec le compte Pro</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.82rem;color:var(--ink2);line-height:1.5;">
+            <div>✓ &nbsp;Accès aux <strong style="color:var(--ink)">83+ articles</strong> financiers</div>
+            <div>✓ &nbsp;Analyse de portefeuille <strong style="color:var(--ink)">sans limite</strong></div>
+            <div>✓ &nbsp;Optimisation Monte Carlo &amp; Markowitz</div>
+            <div>✓ &nbsp;Tous les outils de valorisation</div>
+          </div>
+        </div>
+        <button id="paywallBtnUpgrade" onclick="window.upgradeToPro && window.upgradeToPro()"
+          style="width:100%;padding:13px 20px;background:linear-gradient(135deg,#8a5a00,#c4820a);color:white;border:none;border-radius:9px;font-family:var(--font-sans);font-size:0.88rem;font-weight:700;letter-spacing:0.04em;cursor:pointer;transition:opacity 0.15s;margin-bottom:10px;"
+          onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
+        <button onclick="document.getElementById('articlePaywallModal').style.display='none';typeof openAuthModal==='function'&&openAuthModal()"
+          style="width:100%;padding:10px 20px;background:none;color:var(--muted);border:1px solid var(--border);border-radius:9px;font-family:var(--font-sans);font-size:0.8rem;cursor:pointer;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--ink2)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">J'ai déjà un compte — me connecter</button>
+      </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+}
+
 // ── Lecture d'un article ───────────────────────────────────────────────────
 function openArticle(id) {
   _currentArticleId = Number(id);
@@ -329,6 +370,11 @@ function openArticle(id) {
   if (!article) return;
 
   const isMod = typeof window.isUserModerator === 'function' && window.isUserModerator();
+  const isPro  = typeof window.isUserPremium  === 'function' && window.isUserPremium();
+  if (!isMod && !isPro && (article.ordre || article.id) > _FREE_ARTICLES_LIMIT) {
+    _showArticleUpgradeModal();
+    return;
+  }
 
   document.getElementById('articlesGrid').style.display  = 'none';
   document.getElementById('articleReader').style.display = 'block';

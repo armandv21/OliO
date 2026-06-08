@@ -1,8 +1,12 @@
 // ── Panneau Articles ─────────────────────────────────────────────────────────
 
+const _ARTICLES_PAGE_SIZE = 30;
+
 let _currentArticleId = null;
-let _articlesLoaded = [];
-let _articleFilter = { category: 'all', level: 'all' };
+let _articlesLoaded   = [];
+let _articleFilter    = { category: 'all', level: 'all' };
+let _articlePage      = 1;
+let _scrollObserver   = null;
 
 // ── Chargement : Supabase d'abord, fallback statique ───────────────────────
 async function loadArticlesData() {
@@ -24,106 +28,155 @@ async function loadArticlesData() {
 function _getFilteredArticles() {
   return _articlesLoaded.filter(a => {
     const catMatch = _articleFilter.category === 'all' || a.categorie === _articleFilter.category;
-    const lvlMatch = _articleFilter.level === 'all' || a.niveau === _articleFilter.level;
+    const lvlMatch = _articleFilter.level   === 'all' || a.niveau    === _articleFilter.level;
     return catMatch && lvlMatch;
   });
 }
 
 function _setFilter(type, value) {
   _articleFilter[type] = _articleFilter[type] === value ? 'all' : value;
+  _articlePage = 1;
   _renderFilteredGrid();
 }
 
+// ── Construction HTML d'une carte ──────────────────────────────────────────
+function _buildCardHtml(a, isMod) {
+  const colorVar    = `var(--${a.couleur_lien || 'blue'})`;
+  const niveauColor = a.niveau === 'Intermédiaire' ? 'var(--amber)' : a.niveau === 'Avancé' ? 'var(--rose)' : 'var(--teal)';
+  const niveauBg    = a.niveau === 'Intermédiaire' ? 'rgba(138,90,0,0.08)' : a.niveau === 'Avancé' ? 'rgba(122,31,46,0.08)' : 'rgba(26,92,82,0.08)';
+  const safeTitle   = (a.titre || '').replace(/'/g, "\\'");
+
+  return `
+    <div style="position:relative;">
+      <button onclick="openArticle(${a.id})"
+        style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);"
+        onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+        <div style="width:52px;height:52px;border-radius:12px;background:${a.gradient};display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">${a.icone}</div>
+        <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${a.categorie}</div>
+        <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">${a.titre}</div>
+        <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">${a.resume}</p>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">${a.duree}</span>
+          <span style="font-size:0.68rem;color:${niveauColor};background:${niveauBg};padding:3px 8px;border-radius:20px">${a.niveau}</span>
+        </div>
+        <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:${colorVar};letter-spacing:0.04em">Lire l'article →</div>
+      </button>
+      ${isMod ? `
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2;">
+        <button onclick="event.stopPropagation();openArticleEditor(${a.id})" title="Modifier"
+          style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:0.8rem;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✎</button>
+        <button onclick="event.stopPropagation();deleteArticle(${a.id},'${safeTitle}')" title="Supprimer"
+          style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:1rem;font-weight:300;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='var(--rose-lt)';this.style.color='var(--rose)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">×</button>
+      </div>` : ''}
+    </div>`;
+}
+
+// ── Infinite scroll ────────────────────────────────────────────────────────
+function _disconnectScrollObserver() {
+  if (_scrollObserver) { _scrollObserver.disconnect(); _scrollObserver = null; }
+  const s = document.getElementById('articlesLoadSentinel');
+  if (s) s.remove();
+}
+
+function _setupScrollObserver(totalFiltered, isMod) {
+  _disconnectScrollObserver();
+  if (_articlePage * _ARTICLES_PAGE_SIZE >= totalFiltered) return;
+
+  const sentinel = document.createElement('div');
+  sentinel.id = 'articlesLoadSentinel';
+  sentinel.style.cssText = 'padding:32px 0;text-align:center;color:var(--muted);font-size:0.78rem;letter-spacing:0.06em;';
+  sentinel.textContent = '↓';
+
+  const cardsContainer = document.getElementById('articlesCardsGrid');
+  if (!cardsContainer) return;
+  cardsContainer.insertAdjacentElement('afterend', sentinel);
+
+  const scrollEl = document.querySelector('.fullscreen-panel-body');
+
+  _scrollObserver = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+
+    const filtered = _getFilteredArticles();
+    _articlePage++;
+    const start = (_articlePage - 1) * _ARTICLES_PAGE_SIZE;
+    const batch = filtered.slice(start, start + _ARTICLES_PAGE_SIZE);
+
+    if (batch.length > 0) {
+      const container = document.getElementById('articlesCardsGrid');
+      if (container) {
+        let html = '';
+        batch.forEach(a => { html += _buildCardHtml(a, isMod); });
+        container.insertAdjacentHTML('beforeend', html);
+      }
+    }
+
+    if (_articlePage * _ARTICLES_PAGE_SIZE >= filtered.length) {
+      _disconnectScrollObserver();
+    }
+  }, { root: scrollEl, rootMargin: '300px', threshold: 0 });
+
+  _scrollObserver.observe(sentinel);
+}
+
+// ── Rendu partiel (filtres + scroll reset) ─────────────────────────────────
 function _renderFilteredGrid() {
   const filtered = _getFilteredArticles();
-  const isMod = typeof window.isUserModerator === 'function' && window.isUserModerator();
+  const isMod    = typeof window.isUserModerator === 'function' && window.isUserModerator();
 
-  const grid = document.getElementById('articlesGrid');
-  if (!grid) return;
+  _disconnectScrollObserver();
+  _articlePage = 1;
 
-  // Preserve header + filter bar, replace only the cards grid
   const cardsContainer = document.getElementById('articlesCardsGrid');
   if (!cardsContainer) return;
 
-  const noResults = filtered.length === 0
-    ? `<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--muted);font-size:0.88rem;">Aucun article ne correspond aux filtres sélectionnés.</div>`
-    : '';
-
-  let cardsHtml = noResults;
-  filtered.forEach(a => {
-    const colorVar    = `var(--${a.couleur_lien || 'blue'})`;
-    const niveauColor = a.niveau === 'Intermédiaire' ? 'var(--amber)' : a.niveau === 'Avancé' ? 'var(--rose)' : 'var(--teal)';
-    const niveauBg    = a.niveau === 'Intermédiaire' ? 'rgba(138,90,0,0.08)' : a.niveau === 'Avancé' ? 'rgba(122,31,46,0.08)' : 'rgba(26,92,82,0.08)';
-    const safeTitle   = (a.titre || '').replace(/'/g, "\\'");
-
-    cardsHtml += `
-      <div style="position:relative;">
-        <button onclick="openArticle(${a.id})"
-          style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);"
-          onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
-          <div style="width:52px;height:52px;border-radius:12px;background:${a.gradient};display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">${a.icone}</div>
-          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${a.categorie}</div>
-          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">${a.titre}</div>
-          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">${a.resume}</p>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">${a.duree}</span>
-            <span style="font-size:0.68rem;color:${niveauColor};background:${niveauBg};padding:3px 8px;border-radius:20px">${a.niveau}</span>
-          </div>
-          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:${colorVar};letter-spacing:0.04em">Lire l'article →</div>
-        </button>
-        ${isMod ? `
-        <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2;">
-          <button onclick="event.stopPropagation();openArticleEditor(${a.id})" title="Modifier"
-            style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:0.8rem;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
-            onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
-            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✎</button>
-          <button onclick="event.stopPropagation();deleteArticle(${a.id},'${safeTitle}')" title="Supprimer"
-            style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:1rem;font-weight:300;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all 0.15s;"
-            onmouseover="this.style.borderColor='var(--rose-lt)';this.style.color='var(--rose)'"
-            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">×</button>
-        </div>` : ''}
-      </div>`;
-  });
-
-  cardsContainer.innerHTML = cardsHtml;
-
-  // Update count badge
-  const countEl = document.getElementById('articlesFilterCount');
-  if (countEl) {
-    countEl.textContent = `${filtered.length} article${filtered.length > 1 ? 's' : ''}`;
+  if (filtered.length === 0) {
+    cardsContainer.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--muted);font-size:0.88rem;">Aucun article ne correspond aux filtres sélectionnés.</div>`;
+  } else {
+    const firstBatch = filtered.slice(0, _ARTICLES_PAGE_SIZE);
+    let html = '';
+    firstBatch.forEach(a => { html += _buildCardHtml(a, isMod); });
+    cardsContainer.innerHTML = html;
+    _setupScrollObserver(filtered.length, isMod);
   }
 
-  // Update filter chip active states
+  // Badge : total filtré (pas seulement le lot affiché)
+  const countEl = document.getElementById('articlesFilterCount');
+  if (countEl) countEl.textContent = `${filtered.length} article${filtered.length > 1 ? 's' : ''}`;
+
+  // Chips catégorie
   document.querySelectorAll('[data-filter-cat]').forEach(el => {
     const active = el.dataset.filterCat === _articleFilter.category;
-    el.style.background = active ? 'var(--blue)' : 'var(--surface)';
-    el.style.color = active ? 'white' : 'var(--ink2)';
-    el.style.borderColor = active ? 'var(--blue)' : 'var(--border)';
+    el.style.background   = active ? 'var(--blue)'   : 'var(--surface)';
+    el.style.color        = active ? 'white'          : 'var(--ink2)';
+    el.style.borderColor  = active ? 'var(--blue)'   : 'var(--border)';
   });
+  // Chips niveau
   document.querySelectorAll('[data-filter-lvl]').forEach(el => {
-    const active = el.dataset.filterLvl === _articleFilter.level;
+    const active   = el.dataset.filterLvl === _articleFilter.level;
     const lvlColor = el.dataset.filterLvl === 'Intermédiaire' ? 'var(--amber)' : el.dataset.filterLvl === 'Avancé' ? 'var(--rose)' : 'var(--teal)';
-    el.style.background = active ? lvlColor : 'var(--surface)';
-    el.style.color = active ? 'white' : 'var(--ink2)';
-    el.style.borderColor = active ? lvlColor : 'var(--border)';
+    el.style.background  = active ? lvlColor       : 'var(--surface)';
+    el.style.color       = active ? 'white'         : 'var(--ink2)';
+    el.style.borderColor = active ? lvlColor        : 'var(--border)';
   });
 }
 
-// ── Rendu de la grille ──────────────────────────────────────────────────────
+// ── Rendu de la grille (première ouverture ou refresh complet) ──────────────
 function renderArticlesGrid(articles) {
   const grid = document.getElementById('articlesGrid');
   if (!grid) return;
 
   const isMod = typeof window.isUserModerator === 'function' && window.isUserModerator();
 
-  // Extraire catégories uniques (partie après "· ")
   const allCats = [...new Set(articles.map(a => a.categorie))].sort();
-  const levels = ['Débutant', 'Intermédiaire', 'Avancé'];
+  const levels  = ['Débutant', 'Intermédiaire', 'Avancé'];
 
-  // ── Chips catégorie
   const catChips = allCats.map(cat => {
-    const label = cat.includes('·') ? cat.split('·')[1].trim() : cat;
+    const label  = cat.includes('·') ? cat.split('·')[1].trim() : cat;
     const active = _articleFilter.category === cat;
     return `<button data-filter-cat="${cat}" onclick="_setFilter('category','${cat.replace(/'/g,"\\'")}');this.blur()"
       style="display:inline-flex;align-items:center;padding:5px 13px;border-radius:20px;border:1px solid var(--border);font-family:var(--font-sans);font-size:0.68rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;letter-spacing:0.04em;background:${active?'var(--blue)':'var(--surface)'};color:${active?'white':'var(--ink2)'};border-color:${active?'var(--blue)':'var(--border)'}">
@@ -131,10 +184,9 @@ function renderArticlesGrid(articles) {
     </button>`;
   }).join('');
 
-  // ── Chips niveau
   const lvlChips = levels.map(lvl => {
     const lvlColor = lvl === 'Intermédiaire' ? 'var(--amber)' : lvl === 'Avancé' ? 'var(--rose)' : 'var(--teal)';
-    const active = _articleFilter.level === lvl;
+    const active   = _articleFilter.level === lvl;
     return `<button data-filter-lvl="${lvl}" onclick="_setFilter('level','${lvl}');this.blur()"
       style="display:inline-flex;align-items:center;padding:5px 13px;border-radius:20px;border:1px solid var(--border);font-family:var(--font-sans);font-size:0.68rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;letter-spacing:0.04em;background:${active?lvlColor:'var(--surface)'};color:${active?'white':'var(--ink2)'};border-color:${active?lvlColor:'var(--border)'}">
       ${lvl}
@@ -162,14 +214,13 @@ function renderArticlesGrid(articles) {
       </div>`;
   }
 
-  // ── Barre de filtres
   html += `
     <div style="margin-bottom:24px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">Filtres</div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <span id="articlesFilterCount" style="font-size:0.7rem;color:var(--muted);font-weight:600;">${filtered.length} articles</span>
-          <button onclick="_articleFilter={category:'all',level:'all'};_renderFilteredGrid()" 
+          <span id="articlesFilterCount" style="font-size:0.7rem;color:var(--muted);font-weight:600;">${filtered.length} article${filtered.length > 1 ? 's' : ''}</span>
+          <button onclick="_articleFilter={category:'all',level:'all'};_articlePage=1;_renderFilteredGrid()"
             style="font-size:0.65rem;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;letter-spacing:0.04em;"
             onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'">Tout effacer</button>
         </div>
@@ -184,12 +235,9 @@ function renderArticlesGrid(articles) {
       </div>
     </div>`;
 
-  // ── Grille de cartes (conteneur dynamique)
   html += `<div id="articlesCardsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px"></div>`;
 
   grid.innerHTML = html;
-
-  // Remplir les cartes
   _renderFilteredGrid();
 }
 
@@ -198,8 +246,9 @@ async function initArticlesPanel() {
   const grid = document.getElementById('articlesGrid');
   if (!grid) return;
 
-  // Réinitialiser les filtres à chaque ouverture
   _articleFilter = { category: 'all', level: 'all' };
+  _articlePage   = 1;
+  _disconnectScrollObserver();
 
   document.getElementById('articleReader').style.display = 'none';
   document.getElementById('articlesGrid').style.display  = 'block';
@@ -244,8 +293,8 @@ function _getArticleIds()  { return _articlesLoaded.map(a => Number(a.id)).sort(
 function _renderArticleNav(id) {
   const navEl = document.getElementById('articleNav');
   if (!navEl) return;
-  const ids   = _getArticleIds();
-  const idx   = ids.indexOf(Number(id));
+  const ids    = _getArticleIds();
+  const idx    = ids.indexOf(Number(id));
   const prevId = idx > 0 ? ids[idx - 1] : null;
   const nextId = idx < ids.length - 1 ? ids[idx + 1] : null;
 

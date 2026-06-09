@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="styles/profile.css"/>
 <link rel="stylesheet" href="styles/contact.css"/>
 <link rel="stylesheet" href="styles/responsive.css"/>
+<link rel="icon" href="data:,">
 </head>
 <body>
 
@@ -810,14 +811,24 @@
       <div class="asset-sheet-pane" id="assetPane-segments">
         <div class="asset-sheet-section">
           <div class="asset-sheet-section-title">Répartition du Chiffre d'Affaires par segment</div>
-          <div id="as-segments-chart" style="height: 300px; width: 100%;"></div>
-    
-          <!-- Liste détaillée en dessous -->
-          <div id="as-segments-list" style="margin-top: 20px; font-size: 0.85rem;"></div>
-        </div>
-      </div>
+          <div id="as-segments-chart" style="width: 100%; height: 500px;"></div>
 
-    </div>
+          <div style="display: flex; justify-content: center; width: 100%; gap: 60px; margin-top: 40px; box-sizing: border-box; clear: both;">
+    
+            <div style="width: 30%; max-width: 350px; min-width: 0;">
+              <h4 style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: normal; letter-spacing: 0.5px;">Répartition Géographique</h4>
+              <div id="geo-bar-chart" style="width: 100%; height: 220px;"></div>
+            </div>
+
+            <div style="width: 30%; max-width: 350px; min-width: 0;">
+              <h4 style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: normal; letter-spacing: 0.5px;">Répartition par Produit</h4>
+              <div id="prod-bar-chart" style="width: 100%; height: 220px;"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
   </div>
 </div>
 

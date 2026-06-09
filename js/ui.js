@@ -43,7 +43,8 @@ const _panelMap = {
 
 function openFullPanel(id) {
   // 1. 🛑 VÉRIFICATION PREMIUM (Articles et Portefeuilles)
-  if (id === 'articles' || id === 'portefeuilles') {
+  // Articles : gating par article dans articles.js (ordre > 6)
+  if (id === 'portefeuilles') {
     // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
     const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
     

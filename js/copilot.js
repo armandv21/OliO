@@ -127,6 +127,101 @@
     }
   }
 
+  // ── Render QCM questionnaire ──────────────────────────────────────────────
+  function renderQuestionnaire(action) {
+    var container = document.getElementById('copilotMessages');
+    if (!container) return;
+
+    var intro = document.createElement('div');
+    intro.style.cssText = bubbleStyle('bot');
+    intro.innerHTML = action.intro || 'Quelques questions pour votre portefeuille :';
+    container.appendChild(intro);
+
+    var form = document.createElement('div');
+    form.id = 'copilotQcmForm';
+    form.style.cssText = 'display:flex;flex-direction:column;gap:11px;background:var(--surface2);border-radius:12px;padding:14px;max-width:95%;align-self:flex-start';
+
+    var selections = {};
+
+    (action.questions || []).forEach(function (q, qi) {
+      selections[qi] = { chips: new Set(), custom: '' };
+
+      var qDiv = document.createElement('div');
+
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:0.73rem;font-weight:700;color:var(--ink);margin-bottom:5px';
+      lbl.textContent = q.label;
+      qDiv.appendChild(lbl);
+
+      var chipsDiv = document.createElement('div');
+      chipsDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px';
+
+      (q.options || []).forEach(function (opt) {
+        var chip = document.createElement('button');
+        chip.textContent = opt;
+        var baseStyle = 'padding:4px 10px;border-radius:20px;font-size:0.68rem;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg);color:var(--ink);font-family:var(--font-sans);transition:all 0.12s';
+        chip.style.cssText = baseStyle;
+        chip.dataset.selected = '0';
+        chip.onclick = function () {
+          if (!q.multi) {
+            chipsDiv.querySelectorAll('button').forEach(function (c) {
+              c.dataset.selected = '0';
+              c.style.cssText = baseStyle;
+              selections[qi].chips.delete(c.textContent);
+            });
+          }
+          if (chip.dataset.selected === '1') {
+            chip.dataset.selected = '0';
+            chip.style.cssText = baseStyle;
+            selections[qi].chips.delete(opt);
+          } else {
+            chip.dataset.selected = '1';
+            chip.style.background = 'var(--blue)';
+            chip.style.borderColor = 'var(--blue)';
+            chip.style.color = 'white';
+            chip.style.fontWeight = '700';
+            selections[qi].chips.add(opt);
+          }
+        };
+        chipsDiv.appendChild(chip);
+      });
+      qDiv.appendChild(chipsDiv);
+
+      var customInp = document.createElement('input');
+      customInp.type = 'text';
+      customInp.placeholder = 'Autre…';
+      customInp.style.cssText = 'width:100%;box-sizing:border-box;padding:5px 9px;font-size:0.68rem;border:1px solid var(--border2);border-radius:7px;background:var(--bg);color:var(--ink);font-family:var(--font-sans);outline:none';
+      customInp.oninput = function () { selections[qi].custom = this.value; };
+      qDiv.appendChild(customInp);
+
+      form.appendChild(qDiv);
+    });
+
+    var submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Construire mon portefeuille →';
+    submitBtn.style.cssText = 'margin-top:4px;padding:9px 16px;background:var(--blue);color:white;border:none;border-radius:10px;cursor:pointer;font-size:0.78rem;font-weight:700;font-family:var(--font-sans);width:100%;transition:opacity 0.15s';
+    submitBtn.onmouseover = function () { this.style.opacity = '0.85'; };
+    submitBtn.onmouseout = function () { this.style.opacity = '1'; };
+    submitBtn.onclick = function () {
+      var parts = [];
+      (action.questions || []).forEach(function (q, qi) {
+        var sel = Array.from(selections[qi].chips);
+        var custom = selections[qi].custom.trim();
+        var val = sel.length ? sel.join(', ') : '';
+        if (custom) val = val ? val + ', ' + custom : custom;
+        if (!val) val = 'Non précisé';
+        parts.push(q.label + ' : ' + val);
+      });
+      form.remove();
+      var inp = document.getElementById('copilotInput');
+      if (inp) { inp.value = parts.join(' | '); }
+      window._copilotSend();
+    };
+    form.appendChild(submitBtn);
+    container.appendChild(form);
+    container.scrollTop = container.scrollHeight;
+  }
+
   // ── Execute save action ───────────────────────────────────────────────────
   function executeSaveAction(action) {
     if (typeof window.openSavePortfolio === 'function') {
@@ -229,6 +324,10 @@
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);
         await executePortfolioAction(data.action);
+      } else if (data.action && data.action.type === 'questions') {
+        conversation.push({ role: 'assistant', content: data.reply });
+        if (conversation.length > 20) conversation = conversation.slice(-20);
+        renderQuestionnaire(data.action);
       } else if (data.action && data.action.type === 'save_portfolio') {
         appendMsg('assistant', renderMd(data.reply), true);
         conversation.push({ role: 'assistant', content: data.reply });

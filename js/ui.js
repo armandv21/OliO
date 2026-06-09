@@ -42,19 +42,13 @@ const _panelMap = {
 };
 
 function openFullPanel(id) {
-  // 1. 🛑 VÉRIFICATION PREMIUM (Articles et Portefeuilles)
-  if (id === 'articles' || id === 'portefeuilles') {
-    // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+  // 1. 🛑 VÉRIFICATION PREMIUM (Portefeuilles uniquement — Articles : gating par article dans articles.js)
+  if (id === 'portefeuilles') {
     const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
-    
     if (!isPremium) {
       const modal = document.getElementById('premiumModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active'); 
-        modal.style.display = '';
-      }
-      return; 
+      if (modal) { modal.classList.remove('hidden'); modal.classList.add('active'); modal.style.display = ''; }
+      return;
     }
   }
 

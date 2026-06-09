@@ -100,6 +100,42 @@ window.saveProfileData = async function() {
 // ── SAUVEGARDE DE PORTEFEUILLE (POPUP) ──
 let _tempPortfolioData = null;
 
+let _confirmCallback = null;
+
+window.showConfirmModal = function(title, message, onConfirm, confirmLabel) {
+    const g = id => document.getElementById(id);
+    g('confirmModalTitle').textContent = title;
+    g('confirmModalMessage').textContent = message;
+    const btn = g('confirmModalBtn');
+    if (btn) {
+        btn.textContent = confirmLabel || 'Confirmer';
+        btn.onclick = function() { if (_confirmCallback) _confirmCallback(); };
+    }
+    _confirmCallback = onConfirm;
+    const modal = g('confirmModal');
+    if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
+};
+
+window.closeConfirmModal = function() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+    _confirmCallback = null;
+};
+
+window.showAlertModal = function(title, message) {
+    const g = id => document.getElementById(id);
+    g('alertModalTitle').textContent = title;
+    g('alertModalMessage').textContent = message;
+    const modal = g('alertModal');
+    if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
+};
+
+window.closeAlertModal = function() {
+    const modal = document.getElementById('alertModal');
+    if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
+};
+
+
 window.openSavePortfolio = function(source) {
     // 1. 🛑 VÉRIFICATION PREMIUM
     // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
@@ -125,7 +161,7 @@ window.openSavePortfolio = function(source) {
     const tableContainer = document.getElementById(targetId) || document.getElementById('allocTable');
     
     if (!tableContainer) {
-        alert("Erreur technique : zone de résultats introuvable.");
+        showAlertModal('Erreur', "Zone de résultats introuvable. Relancez un calcul.");
         return;
     }
 
@@ -151,7 +187,7 @@ window.openSavePortfolio = function(source) {
     });
 
     if (composition.length === 0) {
-        alert("Aucune donnée détectée. Faites d'abord un calcul de portefeuille.");
+        showAlertModal('Aucune donnée', "Faites d'abord un calcul de portefeuille.");
         return;
     }
 
@@ -1028,16 +1064,23 @@ async function pfSuiviDraw(composition, period, scale) {
         kpi('Max Drawdown', '-'+(maxDD*100).toFixed(1)+'%', 'var(--rose)');
 }
 
-window.deletePortfolio = async function(id, nom) {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer le portefeuille "${nom}" ?`)) return;
-    try {
-        const { error } = await window.supabaseClient.from('portfolio').delete().eq('id', id);
-        if (error) throw error;
-        loadMyPortfolios();
-    } catch (err) {
-        console.error("Erreur lors de la suppression:", err);
-        alert("Impossible de supprimer le portefeuille. Vérifiez votre connexion.");
-    }
+window.deletePortfolio = function(id, nom) {
+    showConfirmModal(
+        'Supprimer le portefeuille',
+        `Êtes-vous sûr de vouloir supprimer « ${nom} » ? Cette action est irréversible.`,
+        async function() {
+            closeConfirmModal();
+            try {
+                const { error } = await window.supabaseClient.from('portfolio').delete().eq('id', id);
+                if (error) throw error;
+                loadMyPortfolios();
+            } catch (err) {
+                console.error('Erreur lors de la suppression:', err);
+                showAlertModal('Erreur', 'Impossible de supprimer le portefeuille. Vérifiez votre connexion.');
+            }
+        },
+        'Supprimer'
+    );
 };
 
 

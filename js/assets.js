@@ -290,11 +290,14 @@ function _renderIntoContainer(container, filterText, suffix) {
       const peVal = item.pe_ratio != null ? item.pe_ratio.toFixed(1) : '—';
       const divVal = item.dividend_yield != null ? (item.dividend_yield * 100).toFixed(2) + '%' : '—';
       const betaVal = item.beta != null ? item.beta.toFixed(2) : '—';
-      const marginVal = item.net_margin != null ? (item.net_margin * 100).toFixed(1) + '%' : '—';
+      const marginVal = item.profit_margins != null ? (item.profit_margins * 100).toFixed(1) + '%' : '—';
       let capVal = '—';
       if (item.market_cap != null) {
-          capVal = item.market_cap >= 1e12 ? (item.market_cap / 1e12).toFixed(2) + ' T$' : (item.market_cap / 1e9).toFixed(2) + ' Md$';
+        capVal = item.market_cap >= 1e12 ? (item.market_cap / 1e12).toFixed(2) + ' T$' : (item.market_cap / 1e9).toFixed(2) + ' Md$';
       }
+
+      // 🌟 CORRECTION DU BUG : On sécurise le nom pour gérer les apostrophes (ex: L'Oréal)
+      const safeName = encodeURIComponent(item.name).replace(/'/g, "%27");
 
       // --- INJECTION DANS LE HTML ---
       chartDiv.innerHTML =
@@ -310,7 +313,8 @@ function _renderIntoContainer(container, filterText, suffix) {
             _buildKpiCell('Cap.', capVal, 'kpi-cap-' + item.ticker + suffix) +
             _buildKpiCell('Marge N.', marginVal, 'kpi-margin-' + item.ticker + suffix) +
             '<div class="asset-kpi-cell" style="padding:0">' +
-              '<button class="asset-kpi-open-btn" onclick="event.stopPropagation();openAssetSheet(\'' + item.ticker + '\',\'' + encodeURIComponent(item.name) + '\',\'' + (item.isin || '') + '\')" title="Fiche complète">+</button>' +
+              // On utilise safeName ici au lieu de encodeURIComponent(item.name)
+              '<button class="asset-kpi-open-btn" onclick="event.stopPropagation();openAssetSheet(\'' + item.ticker + '\',\'' + safeName + '\',\'' + (item.isin || '') + '\')" title="Fiche complète">+</button>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -521,43 +525,105 @@ const _SHEET_TABS = [
   { id: 'segments',    label: 'Segments'     },
 ];
 
-window.openAssetSheet = function(ticker, encodedName, isin) {
+// 🌟 1. On ajoute "async" pour permettre au script de patienter le temps de la requête
+window.openAssetSheet = async function(ticker, encodedName, isin) {
   const name = decodeURIComponent(encodedName);
   const overlay = document.getElementById('assetSheetOverlay');
   if (!overlay) return;
 
-  // 1. On cherche les données de l'actif cliqué dans notre liste globale
+  // On affiche la fenêtre immédiatement avec un petit indicateur de chargement
+  overlay.querySelector('.asset-sheet-title').textContent = name + " (Actualisation...)";
+  overlay.classList.add('open');
+
+  // 1. On cherche la couleur de catégorie et on prépare un filet de sécurité (fallback)
   let assetData = null;
-  let catColor = '#1e3a5f'; // Couleur par défaut
+  let catColor = '#1e3a5f'; 
   
-  window.ASSETS_DATA.forEach(cat => {
-    const found = cat.items.find(i => i.ticker === ticker);
-    if (found) {
-        assetData = found;
-        catColor = cat.color; // On récupère la couleur de la catégorie !
-    }
-  });
+  if (window.ASSETS_DATA) {
+      window.ASSETS_DATA.forEach(cat => {
+        const found = cat.items.find(i => i.ticker === ticker);
+        if (found) {
+            assetData = found;
+            catColor = cat.color; 
+        }
+      });
+  }
 
-  // 🌟 On lance la création du graphique (il s'affichera tout seul une fois chargé)
+  // On lance immédiatement les graphiques qui ne dépendent pas des fondamentaux (pour la fluidité)
   renderAssetSheetChart(ticker, catColor);
+  renderDividendChart(ticker, catColor);
+  if (typeof renderGrowthChart === 'function') renderGrowthChart(ticker);
+  if (typeof renderDebtEbitdaChart === 'function') renderDebtEbitdaChart(ticker);
+  if (typeof loadSegmentsForAsset === 'function') loadSegmentsForAsset(ticker);
 
-  // 🌟 NOUVEAU : On lance le graphique P/E (en lui passant l'EPS de l'action)
+ // 🌟 2. LE LAZY LOADING EN MODE INTELLIGENT (VERSION CORRIGÉE)
+  try {
+    // A. On vérifie en direct si cet actif a déjà des segments en base
+    let aDesSegments = false;
+    if (assetData && assetData.id) {
+        const { data: segCheck } = await window.supabaseClient
+            .from('segments').select('id').eq('asset_id', assetData.id).limit(1);
+        if (segCheck && segCheck.length > 0) aDesSegments = true;
+    }
+
+    // B. LA CONDITION MAGIQUE : On force l'appel si l'actif n'a pas d'ID (absent de la BDD) 
+    // OU si l'onglet segments est complètement vide !
+    const absentDeLaBase = !assetData || !assetData.id;
+    
+    if (absentDeLaBase || !aDesSegments) {
+        console.log(`🎯 Appel de la Edge Function requis pour ${ticker} (Segments manquants ou actif absent)`);
+        
+        const { data: response, error } = await window.supabaseClient.functions.invoke('lazy-load-fundamentals', {
+          body: { ticker: ticker }
+        });
+        
+        if (error) throw error;
+        
+        if (response && response.data) {
+            assetData = response.data;
+            console.log(`✅ Réponse reçue de la Edge Function (${response.debug_sankey || response.source})`);
+        }
+    } else {
+        console.log(`⚡ [FULL CACHE LOCAL] Finances et Segments déjà présents pour ${ticker}.`);
+    }
+
+  } catch (err) {
+    console.warn("⚠️ Échec de la Edge Function, repli sur le cache local :", err);
+  }
+  // On remet le titre propre (on enlève "Actualisation...")
+  overlay.querySelector('.asset-sheet-title').textContent = name;
+
+  // On lance le graphique P/E maintenant qu'on est sûr d'avoir le vrai EPS rafraîchi
   const currentEps = assetData ? assetData.eps : null;
   renderPEChart(ticker, currentEps, catColor);
 
-  // graphique dividendes
-  renderDividendChart(ticker, catColor);
-
-  // 2. Textes d'en-tête
-  overlay.querySelector('.asset-sheet-title').textContent = name;
-
-  // 3. Remplissage des données si elles existent
+  // 3. Remplissage des données (Le reste de ton code ne change pas !)
   if (assetData) {
-    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    const fPct = v => v != null ? (v * 100).toFixed(2) + '%' : '—';
-    const fNum = v => v != null ? v.toFixed(2) : '—';
-    const fCap = v => v != null ? (v >= 1e12 ? (v / 1e12).toFixed(2) + ' T$' : (v / 1e9).toFixed(2) + ' Md$') : '—';
+      const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+      const fPct = v => v != null ? (v * 100).toFixed(2) + '%' : '—';
+      const fNum = v => v != null ? v.toFixed(2) : '—';
+      const fCap = v => v != null ? (v >= 1e12 ? (v / 1e12).toFixed(2) + ' T$' : (v / 1e9).toFixed(2) + ' Md$') : '—';
 
+    if (assetData.profit_margins) {
+      const marge = assetData.profit_margins * 100;
+      
+      // On cherche l'élément (vérifie bien que cet ID existe dans ton HTML)
+      const element = document.getElementById('as-sidebar-net-margin'); // ou 'as-net-margin'
+    
+      // 🌟 LE FILET DE SÉCURITÉ : on n'écrit que si l'élément existe !
+      if (element) {
+        element.innerText = marge.toFixed(2) + '%';
+      
+        // Code couleur : Vert si > 15%, Orange si > 5%, Rouge sinon
+        if (marge >= 15) {
+          element.style.color = '#10b981'; // Vert
+        } else if (marge >= 5) {
+          element.style.color = '#f59e0b'; // Orange
+        } else {
+          element.style.color = '#ef4444'; // Rouge
+        }
+      }
+    }
     // Remplissage de l'onglet "Aperçu"
     el('as-pe', fNum(assetData.pe_ratio));
     el('as-div', fPct(assetData.dividend_yield));
@@ -1017,27 +1083,249 @@ async function renderDebtEbitdaChart(ticker) {
 }
 
 
-async function loadSegmentsForAsset(assetId) {
-    const { data, error } = await window.supabaseClient
-        .from('segments')
-        .select('*')
-        .eq('asset_id', assetId);
+// ==============================================================================
+// ── GESTION DES SEGMENTS ──
+// ==============================================================================
 
-    if (error) return console.error(error);
-    if (data && data.length > 0) {
-        renderSegmentsChart(data); // Utilise la fonction que nous avons écrite précédemment
-        
-        // Remplissage de la liste
-        const listEl = document.getElementById('as-segments-list');
-        listEl.innerHTML = data.map(s => `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>${s.segment_name}</span>
-                <strong>${(s.revenue_val / 1e9).toFixed(2)} Md$</strong>
-            </div>
-        `).join('');
+// ── Génération du Diagramme de Sankey pour les Segments ──
+function renderSegmentsChart(segmentsData, companyName) {
+    const container = document.getElementById('as-segments-chart');
+    if (!container) return;
+
+    const geoSegments = segmentsData.filter(s => s.segment_type === 'geo');
+    const productSegments = segmentsData.filter(s => s.segment_type === 'product');
+
+    if (geoSegments.length === 0 && productSegments.length === 0) {
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-style:italic;">Aucune donnée de segment disponible.</div>';
+        return;
+    }
+
+    const totalRevenue = productSegments.reduce((sum, s) => sum + s.revenue_val, 0) || geoSegments.reduce((sum, s) => sum + s.revenue_val, 0);
+
+    const labels = [];
+    
+    // 🌟 ASTUCE GAUCHE : On force le % à gauche (vers l'extérieur), puis un grand espace, puis le Nom (vers l'intérieur)
+    geoSegments.forEach(s => {
+        const pct = totalRevenue > 0 ? ((s.revenue_val / totalRevenue) * 100).toFixed(1) : 0;
+        labels.push(`<span style="color:#777777; font-weight:bold;">${pct}%</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${s.segment_name}`);
+    });
+    
+    const companyIndex = labels.length;
+    // Nœud central discret
+    labels.push(`<b>${companyName || 'Entreprise'}</b>`);
+    
+    // 🌟 ASTUCE DROITE : On force le Nom à gauche (vers l'intérieur), puis un grand espace, puis le % à droite (vers l'extérieur)
+    productSegments.forEach(s => {
+        const pct = totalRevenue > 0 ? ((s.revenue_val / totalRevenue) * 100).toFixed(1) : 0;
+        labels.push(`${s.segment_name}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#777777; font-weight:bold;">${pct}%</span>`);
+    });
+
+    const sources = [];
+    const targets = [];
+    const values = [];
+    const customDataPct = [];
+    const linkColors = [];
+
+    // Palette calquée sur ton interface
+    const colorCenter = '#3466a0'; // Bleu central
+    const colorGeo = '#89b4a9'; // Vert doux opaque pour les branches gauches
+    const colorProd = '#c4aa7b'; // Doré doux opaque pour les branches droites
+    
+    geoSegments.forEach((s, idx) => {
+        sources.push(idx);
+        targets.push(companyIndex);
+        values.push(s.revenue_val);
+        const pct = totalRevenue > 0 ? ((s.revenue_val / totalRevenue) * 100).toFixed(1) : 0;
+        customDataPct.push(pct + '%');
+        linkColors.push('rgba(137, 180, 169, 0.4)'); // Vert translucide pour le flux
+    });
+
+    productSegments.forEach((s, idx) => {
+        sources.push(companyIndex);
+        targets.push(companyIndex + 1 + idx);
+        values.push(s.revenue_val);
+        const pct = totalRevenue > 0 ? ((s.revenue_val / totalRevenue) * 100).toFixed(1) : 0;
+        customDataPct.push(pct + '%');
+        linkColors.push('rgba(196, 170, 123, 0.4)'); // Doré translucide pour le flux
+    });
+
+    const trace = {
+        type: "sankey",
+        orientation: "h",
+        node: {
+            pad: 25, 
+            thickness: 30, // 🌟 Branches plus épaisses pour donner l'illusion que le texte sort de la branche
+            line: { color: "transparent", width: 0 },
+            label: labels,
+            color: labels.map((l, idx) => {
+                if (idx === companyIndex) return colorCenter;
+                return idx < companyIndex ? colorGeo : colorProd;
+            }),
+            hovertemplate: '<b>%{label}</b><br>%{value:.2f} Md$<extra></extra>'
+        },
+        link: {
+            source: sources,
+            target: targets,
+            value: values,
+            customdata: customDataPct,
+            hovertemplate: '<b>%{source.label} ➔ %{target.label}</b><br>%{value:.2f} Md$ (%{customdata})<extra></extra>',
+            color: linkColors
+        }
+    };
+
+    const layout = {
+        height: 500,
+        // On réduit un peu les marges pour que tout rentre élégamment
+        margin: { t: 20, b: 20, l: 40, r: 40 }, 
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        font: { 
+            size: 14, 
+            family: 'inherit',
+            color: '#111111' // Texte très sombre pour un aspect premium
+        },
+        hoverlabel: {
+            bgcolor: '#1a1a1a',
+            font: { family: 'inherit', size: 13, color: '#ffffff' },
+            bordercolor: 'transparent',
+            namelength: 0
+        }
+    };
+
+    container.innerHTML = '';
+
+    Plotly.newPlot(container, [trace], layout, { displayModeBar: false, responsive: true });
+}
+
+// ── Génération des Barres Horizontales Compactes (Géo & Produits) ──
+function renderSegmentsBarCharts(segmentsData) {
+    const geoContainer = document.getElementById('geo-bar-chart');
+    const prodContainer = document.getElementById('prod-bar-chart');
+    if (!geoContainer || !prodContainer) return;
+
+    const parsedSegments = segmentsData.map(s => ({
+        ...s,
+        revenue_val: Number(s.revenue_val) || 0
+    }));
+
+    let geoSegments = parsedSegments.filter(s => s.segment_type === 'geo');
+    let productSegments = parsedSegments.filter(s => s.segment_type === 'product');
+
+    const totalRevenue = Math.max(
+        geoSegments.reduce((sum, s) => sum + s.revenue_val, 0),
+        productSegments.reduce((sum, s) => sum + s.revenue_val, 0)
+    );
+
+    if (totalRevenue === 0) return;
+
+    // Tri ASCENDANT (Le plus grand se retrouve en haut)
+    geoSegments.sort((a, b) => a.revenue_val - b.revenue_val);
+    productSegments.sort((a, b) => a.revenue_val - b.revenue_val);
+
+    const xDataGeo = geoSegments.map(s => (s.revenue_val / totalRevenue) * 100);
+    const xDataProd = productSegments.map(s => (s.revenue_val / totalRevenue) * 100);
+
+    const maxGeo = Math.max(...xDataGeo, 0);
+    const maxProd = Math.max(...xDataProd, 0);
+
+    // Configuration commune compacte
+    const commonLayout = {
+        margin: { t: 5, b: 25, l: 100, r: 45 }, // Ajustement des marges pour le format réduit
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        font: { family: 'inherit', size: 12, color: '#333' }, // Police à 12 pour plus de clarté
+        yaxis: { 
+            showgrid: false, 
+            ticklen: 0, 
+            showline: false,
+            automargin: false 
+        },
+        showlegend: false,
+        hoverlabel: { bgcolor: '#1a1a1a', font: { color: '#ffffff' }, bordercolor: 'transparent' }
+    };
+
+    // Dessin Géographie
+    if (geoSegments.length > 0) {
+        Plotly.newPlot(geoContainer, [{
+            type: 'bar', 
+            orientation: 'h',
+            x: xDataGeo,
+            y: geoSegments.map(s => s.segment_name),
+            marker: { color: '#89b4a9' },
+            customdata: geoSegments.map(s => s.revenue_val),
+            text: xDataGeo.map(val => `<b>${val.toFixed(1)}%</b>`),
+            textposition: 'outside', 
+            hovertemplate: '<b>%{y}</b><br>%{customdata:.2f} Md$<extra></extra>'
+        }], {
+            ...commonLayout,
+            xaxis: { type: 'linear', range: [0, maxGeo * 1.25], showgrid: true, gridcolor: 'rgba(0,0,0,0.05)', ticksuffix: '%' }
+        }, { displayModeBar: false, responsive: true });
+    }
+
+    // Dessin Produits
+    if (productSegments.length > 0) {
+        Plotly.newPlot(prodContainer, [{
+            type: 'bar', 
+            orientation: 'h',
+            x: xDataProd,
+            y: productSegments.map(s => s.segment_name),
+            marker: { color: '#c4aa7b' },
+            customdata: productSegments.map(s => s.revenue_val),
+            text: xDataProd.map(val => `<b>${val.toFixed(1)}%</b>`),
+            textposition: 'outside', 
+            hovertemplate: '<b>%{y}</b><br>%{customdata:.2f} Md$<extra></extra>'
+        }], {
+            ...commonLayout,
+            xaxis: { type: 'linear', range: [0, maxProd * 1.25], showgrid: true, gridcolor: 'rgba(0,0,0,0.05)', ticksuffix: '%' }
+        }, { displayModeBar: false, responsive: true });
     }
 }
 
+// ── Chargement des données de segments depuis Supabase ──
+// ── Fonction pour charger les segments depuis Supabase ──
+async function loadSegmentsForAsset(ticker) {
+    try {
+        console.log(`📊 Chargement des segments pour ${ticker}...`);
+
+        // 1. ALLER CHERCHER LE NOM DANS LA COLONNE 'NAME' DE LA TABLE ASSETS
+        const { data: assetData, error: assetError } = await window.supabaseClient
+            .from('assets')
+            .select('id, name')
+            .eq('ticker', ticker)
+            .single();
+
+        if (assetError || !assetData) {
+            console.warn(`⚠️ Impossible de récupérer le nom pour ${ticker} dans la table assets:`, assetError);
+        }
+
+        const companyName = assetData ? assetData.name : ticker;
+        const assetId = assetData ? assetData.id : null;
+
+        if (!assetId) {
+            renderSegmentsChart([], ticker);
+            return;
+        }
+
+        // 2. CHARGER LES SEGMENTS LIÉS À CET ASSET ID
+        const { data: segments, error: segmentsError } = await window.supabaseClient
+            .from('segments')
+            .select('*')
+            .eq('asset_id', assetId);
+
+        if (segmentsError) throw segmentsError;
+
+        // 3. ENVOYER LES DONNÉES ET LE VRAI NOM AU GRAPHIQUE SANKEY
+        renderSegmentsChart(segments || [], companyName);
+
+        renderSegmentsBarCharts(segments || []);
+
+    } catch (err) {
+        console.error("❌ Erreur lors du chargement des segments :", err.message);
+        renderSegmentsChart([], ticker);
+    }
+}
+
+// ==============================================================================
 // Expose globally
 window.openAssetPanel = openAssetPanel;
 window.closeAssetPanel = closeAssetPanel;

@@ -127,6 +127,53 @@
     }
   }
 
+  // ── Render quick-reply chips ──────────────────────────────────────────────
+  function renderQuickReplies(buttons) {
+    var container = document.getElementById('copilotMessages');
+    if (!container) return;
+    var old = container.querySelector('.cml-qr');
+    if (old) old.remove();
+
+    var wrap = document.createElement('div');
+    wrap.className = 'cml-qr';
+    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 4px 0;align-self:flex-start;max-width:95%';
+
+    buttons.forEach(function (btn) {
+      var b = document.createElement('button');
+      b.textContent = btn.label;
+      b.style.cssText = 'padding:5px 12px;border-radius:20px;font-size:0.71rem;cursor:pointer;border:1.5px solid var(--blue);background:transparent;color:var(--blue);font-family:var(--font-sans);font-weight:600;transition:all 0.12s';
+      b.onmouseover = function () { this.style.background = 'var(--blue)'; this.style.color = 'white'; };
+      b.onmouseout = function () { this.style.background = 'transparent'; this.style.color = 'var(--blue)'; };
+      b.onclick = function () {
+        var qr = container.querySelector('.cml-qr');
+        if (qr) qr.remove();
+        if (btn.value) {
+          var inp = document.getElementById('copilotInput');
+          if (inp) inp.value = btn.value;
+          window._copilotSend();
+        } else {
+          var inp = document.getElementById('copilotInput');
+          if (inp) inp.focus();
+        }
+      };
+      wrap.appendChild(b);
+    });
+
+    var other = document.createElement('button');
+    other.textContent = 'Autre…';
+    other.style.cssText = 'padding:5px 12px;border-radius:20px;font-size:0.71rem;cursor:pointer;border:1.5px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--font-sans);transition:all 0.12s';
+    other.onclick = function () {
+      var qr = container.querySelector('.cml-qr');
+      if (qr) qr.remove();
+      var inp = document.getElementById('copilotInput');
+      if (inp) inp.focus();
+    };
+    wrap.appendChild(other);
+
+    container.appendChild(wrap);
+    container.scrollTop = container.scrollHeight;
+  }
+
   // ── Render QCM questionnaire ──────────────────────────────────────────────
   function renderQuestionnaire(action) {
     var container = document.getElementById('copilotMessages');
@@ -288,6 +335,9 @@
     if (!msg) return;
     input.value = '';
 
+    var container = document.getElementById('copilotMessages');
+    if (container) { var oldQr = container.querySelector('.cml-qr'); if (oldQr) oldQr.remove(); }
+
     appendMsg('user', renderMd(msg));
     conversation.push({ role: 'user', content: msg });
 
@@ -324,6 +374,11 @@
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);
         await executePortfolioAction(data.action);
+      } else if (data.action && data.action.type === 'quick_replies') {
+        appendMsg('assistant', renderMd(data.reply));
+        conversation.push({ role: 'assistant', content: data.reply });
+        if (conversation.length > 20) conversation = conversation.slice(-20);
+        if (data.action.buttons && data.action.buttons.length) renderQuickReplies(data.action.buttons);
       } else if (data.action && data.action.type === 'questions') {
         conversation.push({ role: 'assistant', content: data.reply });
         if (conversation.length > 20) conversation = conversation.slice(-20);

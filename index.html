@@ -8,7 +8,7 @@
 <!-- CDN dependencies -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet"/>
 
 <!-- CSS modules -->
 <link rel="stylesheet" href="styles/variables.css"/>
@@ -465,6 +465,20 @@
 <input type="range"  id="simRange" min="1000" max="15000" value="6000" step="500" style="display:none" aria-hidden="true"/>
 
 <div class="fullscreen-panel" id="panelArticles">
+  <a href="https://b4ab4f09.sibforms.com/serve/MUIFABxG0MyfyzYPDGZ5OHz9NhlEqNAUIqEq50_S01YKNNOfXe21iSzyGCmKH4cQzaeJK3bvx41674hfp4fUuxwpuJm3d6wvzUl4P6jfdOyiogCZKDApw3mhn2vGsqMXMVKqpO7207CRoGH4957dVQZ0hXwOB6GQcPN6Og5vauNpwlLqpVgFEpltnft2oTEzlr56UV4pU5xfyuaXPg==" target="_blank" rel="noopener" id="newsletterSideTab"
+    style="position:absolute;right:max(18px,calc(50% - 530px));top:50%;transform:translateY(-50%);z-index:10;
+           writing-mode:vertical-rl;text-decoration:none;
+           display:flex;align-items:center;justify-content:center;
+           padding:22px 13px;
+           background:var(--surface);border:1px solid var(--border);border-radius:10px;
+           font-family:'UnifrakturMaguntia',serif;font-size:1.15rem;color:var(--ink);
+           letter-spacing:0.06em;line-height:1;
+           box-shadow:0 2px 14px rgba(0,0,0,0.07);
+           transition:border-color 0.2s,box-shadow 0.2s,color 0.2s;"
+    onmouseover="this.style.borderColor='var(--blue)';this.style.boxShadow='0 4px 20px rgba(52,102,160,0.18)';this.style.color='var(--blue)'"
+    onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='0 2px 14px rgba(0,0,0,0.07)';this.style.color='var(--ink)'">
+    No Time For The Times
+  </a>
   <div class="fullscreen-panel-header">
     <div style="display:flex;align-items:center">
       <span class="fullscreen-panel-logo">

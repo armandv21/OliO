@@ -200,20 +200,7 @@ function renderArticlesGrid(articles) {
 
   let html = `
     <div style="font-family:var(--font-serif);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:8px">Analyses &amp; Concepts</div>
-    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:${isMod ? '14px' : '20px'}">Explorez nos articles pour mieux comprendre les fondements de la finance quantitative.</p>
-    <a href="https://b4ab4f09.sibforms.com/serve/MUIFABxG0MyfyzYPDGZ5OHz9NhlEqNAUIqEq50_S01YKNNOfXe21iSzyGCmKH4cQzaeJK3bvx41674hfp4fUuxwpuJm3d6wvzUl4P6jfdOyiogCZKDApw3mhn2vGsqMXMVKqpO7207CRoGH4957dVQZ0hXwOB6GQcPN6Og5vauNpwlLqpVgFEpltnft2oTEzlr56UV4pU5xfyuaXPg==" target="_blank" rel="noopener"
-      style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding:14px 20px;background:linear-gradient(135deg,rgba(52,102,160,0.08),rgba(45,138,122,0.08));border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:border-color 0.2s,background 0.2s;flex-wrap:wrap;"
-      onmouseover="this.style.borderColor='var(--blue)';this.style.background='linear-gradient(135deg,rgba(52,102,160,0.13),rgba(45,138,122,0.13))'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.background='linear-gradient(135deg,rgba(52,102,160,0.08),rgba(45,138,122,0.08))'">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">📬</div>
-        <div>
-          <div style="font-size:0.78rem;font-weight:700;color:var(--ink);margin-bottom:2px;">Newsletter OliO</div>
-          <div style="font-size:0.72rem;color:var(--muted);line-height:1.4;">Recevez nos analyses et nouveaux articles directement dans votre boîte mail.</div>
-        </div>
-      </div>
-      <div style="font-size:0.72rem;font-weight:700;color:var(--blue);letter-spacing:0.04em;white-space:nowrap;flex-shrink:0;">S'abonner →</div>
-    </a>`;
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:${isMod ? '14px' : '20px'}">Explorez nos articles pour mieux comprendre les fondements de la finance quantitative.</p>`;
 
   if (isMod) {
     html += `

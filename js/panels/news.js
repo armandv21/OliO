@@ -507,6 +507,14 @@
       _newsData = null;   // forcer un fetch frais à chaque ouverture
       const articles = await _loadNews();
       _renderNewsGrid(articles);
+      // Race condition : si le profil n'était pas encore chargé, re-rendre une fois qu'il l'est
+      if (typeof window.isUserModerator !== 'function' || !window.isUserModerator()) {
+        setTimeout(() => {
+          if (typeof window.isUserModerator === 'function' && window.isUserModerator() && _newsData) {
+            _renderNewsGrid(_newsData);
+          }
+        }, 900);
+      }
       if (articles.length) {
         const badge    = $('newsNewBadge');
         const lastSeen = localStorage.getItem('olio_news_seen');

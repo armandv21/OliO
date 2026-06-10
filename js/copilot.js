@@ -16,11 +16,10 @@
     s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.08);padding:1px 4px;border-radius:3px;font-size:0.88em">$1</code>');
     s = s.replace(/(^|\n)(\d+)\. /g, '$1<span style="color:var(--blue);font-weight:700">$2.</span> ');
     s = s.replace(/(^|\n)[*\-] /g, '$1<span style="color:var(--blue);font-weight:700">&bull;</span> ');
-    // URLs → clickable links (Yahoo Finance links show ticker as label)
-    s = s.replace(/https?:\/\/[^\s<&"']+/g, function (url) {
-      var m = url.match(/finance\.yahoo\.com\/quote\/([^/?&\s]+)/);
-      var label = m ? '&#x1F4C8;&nbsp;' + m[1] : url;
-      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:underline;font-weight:600">' + label + '</a>';
+    // Yahoo Finance links → OliO internal asset sheet (openAssetSheet)
+    s = s.replace(/https?:\/\/finance\.yahoo\.com\/quote\/([^/?&\s<"']+)/g, function (_, ticker) {
+      var escaped = ticker.replace(/'/g, "\\'");
+      return '<a href="#" onclick="if(window.openAssetSheet){window.openAssetSheet(\'' + escaped + '\',\'' + escaped + '\',\'\');}return false;" style="display:inline-flex;align-items:center;gap:3px;color:var(--blue);text-decoration:none;font-weight:700;font-size:0.82em;padding:2px 7px;border-radius:10px;border:1.5px solid var(--blue);background:transparent;cursor:pointer">&#x1F4CA;&nbsp;' + ticker + '</a>';
     });
     s = s.replace(/\n\n+/g, '<br><br>');
     s = s.replace(/\n/g, '<br>');

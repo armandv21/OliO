@@ -1,7 +1,8 @@
 // Smoke tests — OliO frontend
 // Run: node tests/smoke.js
 // Lancé automatiquement sur chaque PR via GitHub Actions.
-// But : bloquer toute PR qui casserait la topbar, le layout ou le profil.
+// But : bloquer toute PR qui casserait la topbar, le layout, le profil,
+//       la newsletter, le copilot, le mode dev articles ou le menu profil.
 'use strict';
 
 const fs   = require('fs');
@@ -57,14 +58,30 @@ test('onglet Analyse présent', () =>
 test('onglet CML interactive présent', () =>
   assert(html.includes('>CML interactive<'), 'bouton CML manquant'));
 
-test('bouton Articles présent', () =>
-  assert(html.includes('>Articles<'), 'bouton Articles manquant'));
+test('bouton Articles avec initArticlesPanel()', () => {
+  assert(html.includes('>Articles<'), 'bouton Articles manquant');
+  assert(html.includes("initArticlesPanel()"),
+    'initArticlesPanel() manquant du onclick — mode développeur cassé');
+});
 
 test('bouton Mes portefeuilles présent', () =>
   assert(html.includes('>Mes portefeuilles<'), 'bouton Mes portefeuilles manquant'));
 
 test('avatar profil présent', () =>
   assert(html.includes('id="profileAvatar"'), 'profileAvatar manquant'));
+
+test('profileWrap dans la topbar (pas en bas du body)', () => {
+  const topbarStart = html.indexOf('<div class="topbar">');
+  const topbarEnd   = html.indexOf('</div>', topbarStart + 200); // first close after topbar
+  // profileWrap must appear BEFORE the closing body tag and NEAR btnTopLogin
+  const btnLoginIdx  = html.indexOf('id="btnTopLogin"');
+  const profileWrapIdx = html.indexOf('id="profileWrap"');
+  assert(btnLoginIdx !== -1, 'btnTopLogin introuvable');
+  assert(profileWrapIdx !== -1, 'profileWrap introuvable');
+  // profileWrap should be within 2000 chars of btnTopLogin
+  assert(Math.abs(profileWrapIdx - btnLoginIdx) < 2000,
+    `profileWrap trop loin de btnTopLogin (${Math.abs(profileWrapIdx - btnLoginIdx)} chars) — il est probablement tombé en bas du body`);
+});
 
 test('meta viewport sans viewport-fit=cover', () =>
   assert(!html.includes('viewport-fit=cover'),
@@ -78,9 +95,68 @@ test('fichier images/logo_olio.png existe sur disque', () =>
     'images/logo_olio.png manquant'));
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. CSS LAYOUT — règles critiques
+// 2. FONTS & FAVICON
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n2. CSS layout critique\n');
+console.log('\n2. Fonts & Favicon\n');
+
+test('police UnifrakturMaguntia (newsletter card)', () =>
+  assert(html.includes('UnifrakturMaguntia'),
+    'UnifrakturMaguntia manquant du lien Google Fonts — newsletter card sans typo gothique'));
+
+test('favicon data: présent (évite 404)', () =>
+  assert(html.includes('rel="icon" href="data:,">'),
+    'favicon data:, manquant — provoque une requête 404 favicon dans les DevTools'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. NEWSLETTER
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n3. Newsletter\n');
+
+test('carte newsletter #newsletterSideTab présente', () =>
+  assert(html.includes('id="newsletterSideTab"'),
+    'newsletterSideTab manquant — la carte newsletter a disparu'));
+
+test('lien Brevo newsletter présent', () =>
+  assert(html.includes('sibforms.com'),
+    'lien sibforms.com manquant — la carte newsletter ne pointe nulle part'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. COPILOTE LLM
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n4. Copilote LLM\n');
+
+test('script js/copilot.js chargé', () =>
+  assert(html.includes('src="js/copilot.js"'),
+    'js/copilot.js absent — le copilote ne se charge pas du tout'));
+
+test('fichier js/copilot.js existe sur disque', () =>
+  assert(fs.existsSync(path.join(ROOT, 'js/copilot.js')),
+    'js/copilot.js manquant sur disque'));
+
+test('copilot.js référence le backend Render', () => {
+  const copilot = read('js/copilot.js');
+  assert(copilot.includes('onrender.com'),
+    'URL backend onrender.com absente de copilot.js');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. MODE DÉVELOPPEUR ARTICLES — éditeur modal
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n5. Mode développeur Articles\n');
+
+test('modale articleEditorModal présente', () =>
+  assert(html.includes('id="articleEditorModal"'),
+    'articleEditorModal manquant — le mode développeur Articles est cassé'));
+
+test('champs éditeur article présents (titre, contenu)', () => {
+  assert(html.includes('id="aeTitre"'), 'aeTitre manquant');
+  assert(html.includes('id="aeContent"'), 'aeContent manquant');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. CSS LAYOUT — règles critiques
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n6. CSS layout critique\n');
 
 test('.app a height:100vh', () =>
   assert(/height\s*:\s*100vh/.test(layoutCss),
@@ -111,9 +187,9 @@ test('body sans padding-top safe-area', () =>
     'body padding-top:safe-area détecté — décale .app et cache la topbar sur desktop'));
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. FICHIERS CSS — tous présents
+// 7. FICHIERS CSS — tous présents
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n3. Fichiers CSS\n');
+console.log('\n7. Fichiers CSS\n');
 
 [
   'styles/variables.css', 'styles/base.css',    'styles/layout.css',
@@ -124,9 +200,9 @@ console.log('\n3. Fichiers CSS\n');
   test(`${f}`, () => assert(fs.existsSync(path.join(ROOT, f)), `${f} manquant`)));
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. FICHIERS JS — tous présents
+// 8. FICHIERS JS — tous présents
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n4. Fichiers JS\n');
+console.log('\n8. Fichiers JS\n');
 
 [
   'js/config.js', 'js/auth.js', 'js/profile.js', 'js/assets.js',
@@ -134,13 +210,33 @@ console.log('\n4. Fichiers JS\n');
   'js/charts/frontier.js', 'js/charts/cml.js',
   'js/charts/risk.js', 'js/charts/correlation.js',
   'js/panels/articles.js', 'js/panels/portfolios.js',
+  'js/data/articles.js', 'js/stripe.js',
 ].forEach(f =>
   test(`${f}`, () => assert(fs.existsSync(path.join(ROOT, f)), `${f} manquant`)));
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. ONGLET PROFIL — badge abonnement dynamique (PR #1)
+// 9. ORDRE DES SCRIPTS — séquence critique
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\n5. Onglet Profil\n');
+console.log('\n9. Ordre des scripts\n');
+
+test('auth.js chargé avant app.js', () => {
+  const authIdx = html.indexOf('src="js/auth.js"');
+  const appIdx  = html.indexOf('src="js/app.js"');
+  assert(authIdx !== -1 && appIdx !== -1, 'auth.js ou app.js manquant');
+  assert(authIdx < appIdx, 'auth.js doit être chargé avant app.js');
+});
+
+test('copilot.js chargé en dernier (après app.js)', () => {
+  const appIdx     = html.lastIndexOf('src="js/app.js"');
+  const copilotIdx = html.lastIndexOf('src="js/copilot.js"');
+  assert(appIdx !== -1 && copilotIdx !== -1, 'app.js ou copilot.js manquant');
+  assert(copilotIdx > appIdx, 'copilot.js doit être après app.js');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. ONGLET PROFIL — badge abonnement dynamique
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\n10. Onglet Profil\n');
 
 const _els = {};
 function mockEl(id, o = {}) {

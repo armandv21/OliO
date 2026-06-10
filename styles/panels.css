@@ -78,3 +78,8 @@
 .fullscreen-empty-sub {
   font-size: 0.78rem; text-align: center; max-width: 280px; line-height: 1.6;
 }
+
+/* Newsletter side tab — masqué si marges insuffisantes */
+@media (max-width: 1060px) {
+  #newsletterSideTab { display: none !important; }
+}

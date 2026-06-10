@@ -65,6 +65,13 @@
     fab.onmouseover = function () { this.style.transform = 'scale(1.08)'; };
     fab.onmouseout = function () { this.style.transform = ''; };
     fab.onclick = toggleCopilot;
+
+    if (!document.getElementById('copilotStyles')) {
+      var st = document.createElement('style');
+      st.id = 'copilotStyles';
+      st.textContent = '@keyframes cmlPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.5)}}@keyframes cmlFade{0%,100%{opacity:0.25}50%{opacity:1}}';
+      document.head.appendChild(st);
+    }
     document.body.appendChild(fab);
 
     // Panel
@@ -82,7 +89,7 @@
         + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:7px">'
-        + '<button id="copilotAutoBtn" onclick="window._copilotToggleAuto()" title="Mode Autopilote" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.75);cursor:pointer;font-size:0.6rem;padding:4px 9px;border-radius:12px;font-family:var(--font-sans);font-weight:700;letter-spacing:0.06em;transition:all 0.15s">&#9889;&nbsp;AUTO</button>'
+        + '<button id="copilotAutoBtn" onclick="window._copilotToggleAuto()" title="Mode Autopilote" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.75);cursor:pointer;font-size:0.6rem;padding:4px 9px;border-radius:12px;font-family:var(--font-sans);font-weight:700;letter-spacing:0.06em;transition:all 0.15s">AUTO</button>'
         + '<button onclick="window._copilotClose()" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.75);cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem" onmouseover="this.style.background=\'rgba(255,255,255,0.22)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.12)\'">&#x2715;</button>'
       + '</div>'
     + '</div>';
@@ -91,7 +98,7 @@
       + '<div style="' + bubbleStyle('bot') + '">'
         + 'Bonjour ! Je suis le copilote OliO. Posez-moi vos questions sur les concepts financiers, la navigation dans l&#39;app ou votre profil de risque.'
         + '<div style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,0.04);border-radius:7px;font-size:0.72rem;color:var(--muted);line-height:1.45">'
-          + '<strong style="color:var(--ink)">&#9889; Mode Autopilote</strong><br>'
+          + '<strong style="color:var(--ink)">Mode Autopilote</strong><br>'
           + 'Activez AUTO pour que je construise votre portefeuille interactivement et lance les simulations directement dans l&#39;app.'
         + '</div>'
       + '</div>'
@@ -122,13 +129,21 @@
     var btn = document.getElementById('copilotAutoBtn');
     var subtitle = document.getElementById('copilotSubtitle');
     if (btn) {
-      btn.style.background = isAutopilot ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.12)';
-      btn.style.color = isAutopilot ? 'white' : 'rgba(255,255,255,0.75)';
-      btn.style.borderColor = isAutopilot ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)';
+      if (isAutopilot) {
+        btn.style.background = 'rgba(220,38,38,0.9)';
+        btn.style.borderColor = 'rgba(220,38,38,1)';
+        btn.style.color = 'white';
+        btn.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:white;margin-right:4px;animation:cmlPulse 1s ease-in-out infinite;vertical-align:middle"></span>AUTO';
+      } else {
+        btn.style.background = 'rgba(255,255,255,0.12)';
+        btn.style.borderColor = 'rgba(255,255,255,0.25)';
+        btn.style.color = 'rgba(255,255,255,0.75)';
+        btn.innerHTML = 'AUTO';
+      }
     }
-    if (subtitle) subtitle.textContent = isAutopilot ? '⚡ Autopilote actif' : 'Finance · App · Risque';
+    if (subtitle) subtitle.textContent = isAutopilot ? 'Autopilote actif' : 'Finance \xb7 App \xb7 Risque';
     if (isAutopilot) {
-      appendMsg('assistant', '⚡ <strong>Mode Autopilote activé.</strong><br>Dites-moi quel portefeuille vous souhaitez créer. Je vais vous poser quelques questions pour affiner la sélection, puis lancer la simulation directement dans l&#39;app.');
+      appendMsg('assistant', '<strong>Mode Autopilote activé.</strong><br>Dites-moi quel portefeuille vous souhaitez créer et je vous guidera pas à pas.');
     }
   }
 
@@ -303,15 +318,7 @@
     var rfInput = document.getElementById('homeRfInput');
     if (rfInput && action.rf !== undefined) rfInput.value = (action.rf * 100).toFixed(1);
 
-    // Show follow-up message before closing
-    appendMsg('assistant',
-      '&#x23F3; Simulation en cours dans l&#39;app&hellip; Revenez me parler une fois les r&eacute;sultats affich&eacute;s pour <strong>discuter du niveau de risque</strong> et <strong>enregistrer le portefeuille</strong>.'
-    );
-
-    await new Promise(function (r) { setTimeout(r, 2200); });
-    window._copilotClose();
-    await new Promise(function (r) { setTimeout(r, 300); });
-
+    // Apply portfolio — copilot stays open
     if (typeof window.applyPortfolio === 'function') {
       var w = 1 / tickers.length;
       window.applyPortfolio(tickers.map(function (t) { return { ticker: t, weight: w }; }));
@@ -329,6 +336,18 @@
       if (sc) sc.textContent = tickers.length;
       setTimeout(function () { if (typeof runOptimization === 'function') runOptimization(); }, 800);
     }
+
+    // Show post-launch panel — copilot stays open
+    appendMsg('assistant',
+      '<strong>Simulation lanc\u00e9e !</strong> Les actifs sont s\u00e9lectionn\u00e9s et l&#39;optimisation tourne dans l&#39;app.<br>' +
+      '<span style="font-size:0.74rem;color:var(--muted)">Que souhaitez-vous faire ?</span>'
+    );
+    renderQuickReplies([
+      { label: 'Analyser le portefeuille', value: 'analyse le portefeuille optimis\u00e9 et dis-moi ce que tu en penses' },
+      { label: 'Diagnostic complet', value: 'fais un diagnostic complet : rendement attendu, risque, diversification, corr\u00e9lations' },
+      { label: 'ETF \u00e9quivalents', value: 'quels ETF sont \u00e9quivalents \u00e0 ce portefeuille ?' },
+      { label: 'Enregistrer', value: 'enregistre' },
+    ]);
   }
 
   // ── Send message ──────────────────────────────────────────────────────────
@@ -350,7 +369,11 @@
     var sendBtn = document.getElementById('copilotSendBtn');
     if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.5'; }
 
-    var typing = appendMsg('assistant', '<span style="opacity:0.4;letter-spacing:3px">• • •</span>');
+    var typing = appendMsg('assistant',
+      '<span style="animation:cmlFade 1.2s 0s ease-in-out infinite;margin-right:3px">&bull;</span>' +
+      '<span style="animation:cmlFade 1.2s 0.4s ease-in-out infinite;margin-right:3px">&bull;</span>' +
+      '<span style="animation:cmlFade 1.2s 0.8s ease-in-out infinite">&bull;</span>'
+    );
 
     try {
       var resp = await fetch(BACKEND + '/copilot', {

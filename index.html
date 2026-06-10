@@ -8,7 +8,7 @@
 <!-- CDN dependencies -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
 <!-- CSS modules -->
 <link rel="stylesheet" href="styles/variables.css"/>
@@ -21,7 +21,6 @@
 <link rel="stylesheet" href="styles/profile.css"/>
 <link rel="stylesheet" href="styles/contact.css"/>
 <link rel="stylesheet" href="styles/responsive.css"/>
-<link rel="icon" href="data:,">
 </head>
 <body>
 
@@ -233,94 +232,10 @@
       <button class="tab-btn" onclick="switchTab('cml',this)">CML interactive</button>
       <button class="tab-btn" onclick="switchTab('risk',this)">Niveaux de risque</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <button class="panel-nav-btn" id="btnArticles" onclick="openFullPanel('articles');initArticlesPanel()">Articles</button>
+        <button class="panel-nav-btn" id="btnArticles" onclick="openFullPanel('articles')">Articles</button>
         <button class="panel-nav-btn" id="btnPortefeuilles" onclick="openFullPanel('portefeuilles'); loadMyPortfolios();">Mes portefeuilles</button>
         
         <button class="btn-run" id="btnTopLogin" onclick="openAuthModal()" style="padding: 6px 16px; margin-left: 8px;">Connexion</button>
-        <div class="profile-wrap" id="profileWrap" style="display:none;">
-          <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
-          <div class="profile-dropdown" id="profileDropdown">
-            <div class="profile-dd-header">
-              <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
-              <div style="min-width:0">
-                <div class="profile-dd-name" id="profileDdName">Chargement…</div>
-                <div class="profile-dd-email" id="profileDdEmail"></div>
-              </div>
-            </div>
-            <div class="profile-dd-tabs">
-              <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
-              <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
-            </div>
-            <div class="profile-dd-pane active" id="pane-settings">
-              <div class="profile-setting-row">
-                <span class="profile-setting-label">Langue</span>
-                <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-              <div class="profile-setting-row">
-                <span class="profile-setting-label">Devise</span>
-                <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
-                  <option value="eur">EUR €</option>
-                  <option value="usd">USD $</option>
-                  <option value="gbp">GBP £</option>
-                  <option value="chf">CHF ₣</option>
-                </select>
-              </div>
-              <div class="profile-sim-row">
-                <div class="profile-sim-label">
-                  <span class="profile-setting-label">Simulations Monte Carlo</span>
-                  <span class="profile-sim-val" id="profileSimVal">6 000</span>
-                </div>
-                <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
-              </div>
-            </div>
-            <div class="profile-dd-pane" id="pane-account">
-              <div class="profile-section-label">Abonnement</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
-                <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
-                <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
-              </div>
-              <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
-              <div class="profile-section-label">Informations</div>
-              <div id="profileDisplayMode">
-                <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
-                <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
-                <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
-                <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
-                <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
-                <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
-              </div>
-              <div id="profileEditMode" style="display:none;margin-top:10px;">
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
-                  <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Nom</span>
-                  <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
-                  <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
-                  <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
-                  <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
-                </div>
-                <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
-                <div style="display:flex;gap:10px;margin-top:15px;">
-                  <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
-                  <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="content">
@@ -465,21 +380,6 @@
 <input type="range"  id="simRange" min="1000" max="15000" value="6000" step="500" style="display:none" aria-hidden="true"/>
 
 <div class="fullscreen-panel" id="panelArticles">
-  <a href="https://b4ab4f09.sibforms.com/serve/MUIFABxG0MyfyzYPDGZ5OHz9NhlEqNAUIqEq50_S01YKNNOfXe21iSzyGCmKH4cQzaeJK3bvx41674hfp4fUuxwpuJm3d6wvzUl4P6jfdOyiogCZKDApw3mhn2vGsqMXMVKqpO7207CRoGH4957dVQZ0hXwOB6GQcPN6Og5vauNpwlLqpVgFEpltnft2oTEzlr56UV4pU5xfyuaXPg==" target="_blank" rel="noopener" id="newsletterSideTab"
-    style="position:absolute;right:24px;top:50%;transform:translateY(-50%);z-index:10;
-           width:182px;text-decoration:none;text-align:center;
-           display:flex;flex-direction:column;align-items:center;gap:10px;
-           padding:18px 16px 14px;
-           background:var(--surface);border:1px solid var(--border);border-radius:12px;
-           box-shadow:0 2px 16px rgba(0,0,0,0.07);
-           animation:newsletter-nudge 60s ease-in-out infinite;
-           transition:border-color 0.2s,box-shadow 0.2s;"
-    onmouseover="this.style.borderColor='var(--blue)';this.style.boxShadow='0 4px 24px rgba(52,102,160,0.14)';this.style.animationPlayState='paused'"
-    onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='0 2px 16px rgba(0,0,0,0.07)';this.style.animationPlayState='running'">
-    <div style="font-family:'UnifrakturMaguntia',serif;font-size:1.25rem;color:var(--ink);line-height:1.25;">No Time For The Times</div>
-    <p style="font-size:0.7rem;color:var(--muted);line-height:1.55;margin:0;">Abonne-toi à notre newsletter pour ne plus rien rater de l'actu&nbsp;!</p>
-    <div style="font-size:0.68rem;font-weight:700;color:var(--blue);letter-spacing:0.05em;">S'abonner →</div>
-  </a>
   <div class="fullscreen-panel-header">
     <div style="display:flex;align-items:center">
       <span class="fullscreen-panel-logo">
@@ -492,11 +392,208 @@
     </div>
   </div>
   <div class="fullscreen-panel-body">
-    <div id="articlesGrid" style="max-width:900px;margin:40px auto;padding:0 32px"></div>
+    <div id="articlesGrid" style="max-width:900px;margin:40px auto;padding:0 32px">
+      <div style="font-family:var(--font-serif);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:8px">Analyses &amp; Concepts</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:36px">Explorez nos articles pour mieux comprendre les fondements de la finance quantitative.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
+        <button onclick="openArticle(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📐</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Théorie</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le MEDAF</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Comprendre le prix du risque et la relation fondamentale entre rendement attendu et risque systématique.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">6 min</span>
+            <span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(2)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📡</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Mesure du risque</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Bêta (β)</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Mesurer la sensibilité d'un actif aux mouvements du marché. L'outil central du risque systématique.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span>
+            <span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(3)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#8a5a00,#c4820a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔬</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Théorie avancée</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">L'APT</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Quand le risque vient de partout : la théorie multi-facteurs qui généralise le MEDAF.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">7 min</span>
+            <span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span>
+          </div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(4)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📊</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le P/E</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Ce que vous payez vraiment pour chaque euro de profit.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(5)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📚</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Price/Book</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Ce que vaut vraiment l'entreprise si tout s'arrêtait.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(6)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#3466a0,#1e3a5f);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">💹</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Price/Sales</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Valoriser même quand il n'y a pas encore de profit.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(7)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#1e3a5f);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">💰</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Price/FCF</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Mesurer la valeur avec le vrai cash généré.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(8)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#8a5a00,#c4820a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📈</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le PEG Ratio</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Le P/E ajusté à la croissance — l'outil de Peter Lynch.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(9)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#1a5c52);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🏢</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">EV / Revenue</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">La valeur d'entreprise face au chiffre d'affaires.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(10)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#3466a0,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🏦</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Fondamentaux</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Capitalisation Boursière</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Ce que le marché pense vraiment de l'entreprise.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(11)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#8a5a00);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📉</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Rentabilité</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le BNA</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Le bénéfice ramené à l'échelle de chaque action.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(12)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#2d8a7a,#1e3a5f);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">💵</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Flux de trésorerie</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Free Cash Flow</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Le cash qui reste vraiment dans les mains de l'entreprise.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(13)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#8a5a00,#1a5c52);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">⚙️</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Rentabilité</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Marge Opérationnelle</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">L'efficacité brute du cœur de métier.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(14)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#8a5a00);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🎯</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Rentabilité</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Marge Nette</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Ce qui reste vraiment pour les actionnaires.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(15)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#2d8a7a,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔄</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Rentabilité</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le ROE</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Ce que l'entreprise rapporte sur chaque euro investi.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(16)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1a5c52,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🌿</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Dividendes</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Rendement du Dividende</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Le taux d'intérêt naturel de l'action.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--teal);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(17)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#8a5a00,#1a5c52);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🥧</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Dividendes</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Payout Ratio</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Quelle part des bénéfices part en dividendes ?</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(18)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#2d8a7a);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔢</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Actions</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Actions en Circulation</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Dilution, rachats et ce qu'ils révèlent.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(19)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#7a1f2e,#b03045);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">⚖️</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Santé financière</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Dette / Capitaux Propres</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Mesurer l'équilibre entre dettes et fonds propres.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--rose);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(20)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#b03045,#8a5a00);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">📆</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Santé financière</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Dette / EBITDA</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Combien d'années pour rembourser la dette ?</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">5 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--amber);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(21)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#7a1f2e,#1e3a5f);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🛡️</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Santé financière</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Couverture des Intérêts</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">L'entreprise peut-elle payer ses intérêts ?</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">4 min</span><span style="font-size:0.68rem;color:var(--teal);background:rgba(26,92,82,0.08);padding:3px 8px;border-radius:20px">Débutant</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--rose);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(22)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔭</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le DCF</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Pourquoi 100 € demain valent moins que 100 € aujourd'hui.</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">7 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--blue);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+        <button onclick="openArticle(23)" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);">
+          <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#7a1f2e,#3466a0);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:1.4rem">🔀</div>
+          <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Finance · Valorisation</div>
+          <div style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">Le Reverse DCF</div>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:16px">Quelle croissance le marché parie-t-il sur ce titre ?</p>
+          <div style="display:flex;align-items:center;gap:12px"><span style="font-size:0.68rem;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px">6 min</span><span style="font-size:0.68rem;color:var(--amber);background:rgba(138,90,0,0.08);padding:3px 8px;border-radius:20px">Intermédiaire</span></div>
+          <div style="margin-top:16px;font-size:0.75rem;font-weight:600;color:var(--rose);letter-spacing:0.04em">Lire l'article →</div>
+        </button>
+      </div>
+    </div>
     <div id="articleReader" style="display:none;max-width:860px;margin:0 auto;padding:0 32px 60px">
       <button onclick="closeArticle()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--muted);padding:24px 0 32px;letter-spacing:0.04em;transition:color 0.15s">← Retour aux articles</button>
       <div id="articleContent"></div>
-      <div id="articleNav"></div>
     </div>
   </div>
 </div>
@@ -691,25 +788,12 @@
       <!-- SEGMENTS -->
       <div class="asset-sheet-pane" id="assetPane-segments">
         <div class="asset-sheet-section">
-          <div class="asset-sheet-section-title">Répartition du Chiffre d'Affaires par segment</div>
-          <div id="as-segments-chart" style="width: 100%; height: 500px;"></div>
-
-          <div style="display: flex; justify-content: center; width: 100%; gap: 60px; margin-top: 40px; box-sizing: border-box; clear: both;">
-    
-            <div style="width: 30%; max-width: 350px; min-width: 0;">
-              <h4 style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: normal; letter-spacing: 0.5px;">Répartition Géographique</h4>
-              <div id="geo-bar-chart" style="width: 100%; height: 220px;"></div>
-            </div>
-
-            <div style="width: 30%; max-width: 350px; min-width: 0;">
-              <h4 style="font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; font-weight: normal; letter-spacing: 0.5px;">Répartition par Produit</h4>
-              <div id="prod-bar-chart" style="width: 100%; height: 220px;"></div>
-            </div>
-
-          </div>
+          <div class="asset-sheet-section-title">Segmentation des ventes</div>
+          <div class="asset-sheet-placeholder" style="height:220px">Diagramme Sankey géographie × segment à venir</div>
         </div>
-
       </div>
+
+    </div>
   </div>
 </div>
 
@@ -734,6 +818,90 @@
   </div>
 </div>
 
+<div class="profile-wrap" id="profileWrap" style="display:none;">
+  <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileDropdown()" title="Mon profil">?</div>
+  <div class="profile-dropdown" id="profileDropdown">
+    <div class="profile-dd-header">
+      <div class="profile-dd-avatar-lg" id="profileAvatarLg">?</div>
+      <div style="min-width:0">
+        <div class="profile-dd-name" id="profileDdName">Chargement…</div>
+        <div class="profile-dd-email" id="profileDdEmail"></div>
+      </div>
+    </div>
+    <div class="profile-dd-tabs">
+      <button class="profile-dd-tab active" onclick="switchProfileTab('settings',this)">Paramètres</button>
+      <button class="profile-dd-tab" onclick="switchProfileTab('account',this)">Compte</button>
+    </div>
+    <div class="profile-dd-pane active" id="pane-settings">
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Langue</span>
+        <select class="profile-select" id="pref-langue" onchange="saveProfilePref('langue',this.value)">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="profile-setting-row">
+        <span class="profile-setting-label">Devise</span>
+        <select class="profile-select" id="pref-devise" onchange="saveProfilePref('devise',this.value)">
+          <option value="eur">EUR €</option>
+          <option value="usd">USD $</option>
+          <option value="gbp">GBP £</option>
+          <option value="chf">CHF ₣</option>
+        </select>
+      </div>
+      <div class="profile-sim-row">
+        <div class="profile-sim-label">
+          <span class="profile-setting-label">Simulations Monte Carlo</span>
+          <span class="profile-sim-val" id="profileSimVal">6 000</span>
+        </div>
+        <input type="range" id="profileSimRange" min="1000" max="15000" value="6000" step="500" oninput="onProfileSimChange(this.value)"/>
+      </div>
+    </div>
+    <div class="profile-dd-pane" id="pane-account">
+      <div class="profile-section-label">Abonnement</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
+        <span class="profile-plan-badge" id="accountPlanDisplay">✦ Pro</span>
+        <span id="accountPlanSubtext" style="font-size:0.65rem;color:var(--muted)">Accès complet</span>
+      </div>
+      <button id="btnUpgradePro" onclick="upgradeToPro()" style="display:none;width:100%;margin:8px 0 4px;padding:9px 14px;background:var(--blue);border:none;border-radius:6px;color:white;font-family:var(--font-sans);font-size:0.75rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✦ Passer à la version Pro</button>
+      <div class="profile-section-label">Informations</div>
+      <div id="profileDisplayMode">
+        <div class="profile-info-row"><span class="profile-info-key">Pseudo</span><span class="profile-info-val" id="accPseudo">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Nom</span><span class="profile-info-val" id="accNom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Prénom</span><span class="profile-info-val" id="accPrenom">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Email</span><span class="profile-info-val" id="accEmail" style="font-size:0.68rem;word-break:break-all">—</span></div>
+        <div class="profile-info-row"><span class="profile-info-key">Naissance</span><span class="profile-info-val" id="accDate">—</span></div>
+        <button class="profile-reset-btn" onclick="toggleEditProfile()" style="margin-top:15px;border-color:var(--teal);color:var(--teal);">✎ Modifier mes informations</button>
+        <button class="profile-reset-btn" onclick="sendPasswordReset()" style="margin-top:15px;">Réinitialiser le mot de passe</button>
+        <div class="profile-reset-success" id="resetSuccess">✓ Email envoyé — vérifiez votre boîte</div>
+        <button class="profile-logout-btn" onclick="doLogout()">Se déconnecter</button>
+      </div>
+      <div id="profileEditMode" style="display:none;margin-top:10px;">
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Pseudo</span>
+          <input type="text" id="editPseudo" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Nom</span>
+          <input type="text" id="editNom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Prénom</span>
+          <input type="text" id="editPrenom" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div class="profile-info-row" style="border-bottom:none;padding-bottom:4px;">
+          <span class="profile-info-key" style="margin-top:5px;">Naissance</span>
+          <input type="date" id="editDate" style="width:65%;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--ink);">
+        </div>
+        <div id="editProfileMsg" style="font-size:0.75rem;text-align:center;margin-top:8px;"></div>
+        <div style="display:flex;gap:10px;margin-top:15px;">
+          <button class="profile-reset-btn" onclick="toggleEditProfile()" style="flex:1;">Annuler</button>
+          <button class="profile-reset-btn" onclick="saveProfileData()" style="flex:1;background:var(--teal);color:white;border-color:var(--teal);">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="popup-overlay" id="savePortfolioPopup" onclick="if(event.target===this)closeSavePortfolio()">
   <div class="popup-box" style="max-width:380px;width:90%">
@@ -823,82 +991,6 @@
   </div>
 </div>
 
-
-<div class="popup-overlay hidden" id="articleEditorModal" onclick="if(event.target===this)closeArticleEditor()">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(800px,96vw);max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.18);display:flex;flex-direction:column;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;flex-shrink:0;">
-      <div id="aeModalTitle" style="font-family:var(--font-serif);font-size:1.05rem;font-weight:700;color:var(--ink)">Modifier l'article</div>
-      <button onclick="closeArticleEditor()" class="popup-close" style="position:static;">✕</button>
-    </div>
-    <input type="hidden" id="aeId"/>
-    <div style="padding:22px 28px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div style="grid-column:1/-1;">
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Titre *</label>
-        <input id="aeTitre" type="text" placeholder="Le MEDAF — Comprendre le prix du risque"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.85rem;color:var(--ink);outline:none;box-sizing:border-box;"/>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Catégorie</label>
-        <input id="aeCategorie" type="text" placeholder="Finance · Théorie"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.82rem;color:var(--ink);outline:none;box-sizing:border-box;"/>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Niveau</label>
-        <select id="aeNiveau" style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.82rem;color:var(--ink);outline:none;">
-          <option value="Débutant">Débutant</option>
-          <option value="Intermédiaire">Intermédiaire</option>
-          <option value="Avancé">Avancé</option>
-        </select>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Durée</label>
-        <input id="aeDuree" type="text" placeholder="6 min"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.82rem;color:var(--ink);outline:none;box-sizing:border-box;"/>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Icône (emoji)</label>
-        <input id="aeIcone" type="text" placeholder="📐"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:1.1rem;color:var(--ink);outline:none;box-sizing:border-box;"/>
-      </div>
-      <div>
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Couleur lien</label>
-        <select id="aeCouleurLien" style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.82rem;color:var(--ink);outline:none;">
-          <option value="blue">Bleu</option>
-          <option value="teal">Vert (teal)</option>
-          <option value="amber">Ambre</option>
-          <option value="rose">Rose</option>
-        </select>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Gradient carte (CSS)</label>
-        <input id="aeGradient" type="text" placeholder="linear-gradient(135deg,#1e3a5f,#3466a0)"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;color:var(--ink);outline:none;box-sizing:border-box;font-family:monospace;"/>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Résumé (carte)</label>
-        <textarea id="aeResume" rows="2" placeholder="Courte description affichée sur la carte…"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:var(--font-sans);font-size:0.82rem;color:var(--ink);outline:none;box-sizing:border-box;resize:vertical;"></textarea>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label style="display:block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Contenu HTML * <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted2)">(corps de l'article)</span></label>
-        <textarea id="aeContent" rows="14" placeholder="<h1 style=&quot;...&quot;>Titre</h1>&#10;<p style=&quot;...&quot;>Paragraphe…</p>"
-          style="width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;font-family:monospace;font-size:0.78rem;color:var(--ink);outline:none;box-sizing:border-box;resize:vertical;line-height:1.5;"></textarea>
-      </div>
-    </div>
-    <div style="padding:14px 28px 22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;bottom:0;background:var(--surface);">
-      <div id="aeSaveMsg" style="font-size:0.78rem;font-weight:600;"></div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="closeArticleEditor()"
-          style="padding:9px 18px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;color:var(--ink2);cursor:pointer;transition:all 0.15s;"
-          onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">Annuler</button>
-        <button onclick="saveArticle()"
-          style="padding:9px 18px;background:var(--blue);color:white;border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.78rem;font-weight:600;cursor:pointer;transition:opacity 0.15s;"
-          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- JS modules -->
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
@@ -915,6 +1007,6 @@
 <script src="js/data/articles.js"></script>
 <script src="js/app.js"></script>
 <script src="js/stripe.js"></script>
-<script src="js/copilot.js"></script>
+<script src="js/panels/news.js"></script>
 </body>
 </html>

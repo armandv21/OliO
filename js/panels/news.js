@@ -163,27 +163,27 @@
 
       if (isMod) {
         html += `
-        <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="position:relative;">
           <button onclick="openNewsArticle(${idx})"
-            style="background:var(--surface);border:1px solid var(--border);border-radius:14px 14px 0 0;
-                   padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);width:100%;"
+            style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+                   padding:28px 24px;cursor:pointer;text-align:left;transition:all 0.2s;font-family:var(--font-sans);"
             onmouseover="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'"
             onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
             ${cardInner}
           </button>
-          <div style="display:flex;gap:0;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;">
-            <button onclick="openNewsEditor(${idx})"
-              style="flex:1;padding:8px;background:var(--surface2);border:none;border-right:1px solid var(--border);
-                     font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--teal);
-                     cursor:pointer;transition:background 0.15s;"
-              onmouseover="this.style.background='rgba(26,92,82,0.12)'"
-              onmouseout="this.style.background='var(--surface2)'">✎ Modifier</button>
-            <button onclick="deleteNewsArticle(${idx})"
-              style="flex:1;padding:8px;background:var(--surface2);border:none;
-                     font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--rose-lt);
-                     cursor:pointer;transition:background 0.15s;"
-              onmouseover="this.style.background='rgba(122,31,46,0.1)'"
-              onmouseout="this.style.background='var(--surface2)'">✕ Supprimer</button>
+          <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2;">
+            <button onclick="event.stopPropagation();openNewsEditor(${idx})" title="Modifier"
+              style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;
+                     cursor:pointer;font-size:0.8rem;color:var(--muted);display:flex;align-items:center;
+                     justify-content:center;transition:all 0.15s;"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">✎</button>
+            <button onclick="event.stopPropagation();deleteNewsArticle(${idx})" title="Supprimer"
+              style="width:26px;height:26px;background:var(--surface);border:1px solid var(--border);border-radius:5px;
+                     cursor:pointer;font-size:1rem;font-weight:300;color:var(--muted);display:flex;align-items:center;
+                     justify-content:center;transition:all 0.15s;"
+              onmouseover="this.style.borderColor='var(--rose-lt)';this.style.color='var(--rose)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">×</button>
           </div>
         </div>`;
       } else {
@@ -205,29 +205,22 @@
   /* ─── Barre de mode modérateur ─── */
   function _modBarHtml() {
     return `
-      <div style="display:flex;align-items:center;justify-content:space-between;
-                  padding:10px 16px;margin-bottom:20px;
-                  background:rgba(26,92,82,0.07);border:1px solid rgba(26,92,82,0.2);
-                  border-radius:10px;">
-        <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;
-                     text-transform:uppercase;color:var(--teal);">✦ Mode modérateur</span>
-        <div style="display:flex;gap:8px;">
-          <button onclick="openNewsEditor(null)"
-            style="padding:6px 14px;background:var(--teal);color:white;border:none;
-                   border-radius:7px;font-family:var(--font-sans);font-size:0.72rem;
-                   font-weight:700;cursor:pointer;transition:opacity 0.15s;"
-            onmouseover="this.style.opacity='0.82'" onmouseout="this.style.opacity='1'">
-            + Ajouter un article
-          </button>
-          <button onclick="exportNewsJson()"
-            style="padding:6px 14px;background:none;border:1px solid var(--teal);color:var(--teal);
-                   border-radius:7px;font-family:var(--font-sans);font-size:0.72rem;
-                   font-weight:700;cursor:pointer;transition:all 0.15s;"
-            onmouseover="this.style.background='rgba(26,92,82,0.08)'"
-            onmouseout="this.style.background='none'">
-            ↓ Exporter JSON
-          </button>
-        </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 16px;
+                  background:rgba(26,92,82,0.06);border:1px solid var(--teal);border-radius:8px;flex-wrap:wrap;">
+        <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+                     color:var(--teal);flex-shrink:0;">Mode modérateur</span>
+        <span style="color:var(--border2)">|</span>
+        <button onclick="openNewsEditor(null)"
+          style="display:inline-flex;align-items:center;gap:6px;padding:6px 13px;background:var(--teal);color:white;
+                 border:none;border-radius:6px;font-family:var(--font-sans);font-size:0.7rem;font-weight:600;
+                 letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;transition:opacity 0.15s;"
+          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">+ Ajouter</button>
+        <button onclick="exportNewsJson()"
+          style="display:inline-flex;align-items:center;gap:6px;padding:6px 13px;background:none;color:var(--teal);
+                 border:1px solid var(--teal);border-radius:6px;font-family:var(--font-sans);font-size:0.7rem;
+                 font-weight:600;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(26,92,82,0.08)'" onmouseout="this.style.background='none'">
+          ↓ Exporter JSON</button>
       </div>`;
   }
 

@@ -16,6 +16,12 @@
     s = s.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.08);padding:1px 4px;border-radius:3px;font-size:0.88em">$1</code>');
     s = s.replace(/(^|\n)(\d+)\. /g, '$1<span style="color:var(--blue);font-weight:700">$2.</span> ');
     s = s.replace(/(^|\n)[*\-] /g, '$1<span style="color:var(--blue);font-weight:700">&bull;</span> ');
+    // URLs → clickable links (Yahoo Finance links show ticker as label)
+    s = s.replace(/https?:\/\/[^\s<&"']+/g, function (url) {
+      var m = url.match(/finance\.yahoo\.com\/quote\/([^/?&\s]+)/);
+      var label = m ? '&#x1F4C8;&nbsp;' + m[1] : url;
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:underline;font-weight:600">' + label + '</a>';
+    });
     s = s.replace(/\n\n+/g, '<br><br>');
     s = s.replace(/\n/g, '<br>');
     return s;

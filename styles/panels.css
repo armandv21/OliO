@@ -80,6 +80,6 @@
 }
 
 /* Newsletter side tab — masqué si marges insuffisantes */
-@media (max-width: 1060px) {
+@media (max-width: 1380px) {
   #newsletterSideTab { display: none !important; }
 }

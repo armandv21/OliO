@@ -1,7 +1,4 @@
 // ── Initialisation de l'application ──────────────────────────────────────────────
-// Ce fichier orchestre le chargement initial et les event listeners top-level.
-// Doit être chargé EN DERNIER (après tous les autres scripts).
-
 // ── Post-traitement visuel Plotly ────────────────────────────────────────────────
 
 async function loadAssetsFromDatabase() {
@@ -20,65 +17,22 @@ async function loadAssetsFromDatabase() {
 
     // 3. On range chaque actif reçu dans sa bonne catégorie
     assets.forEach(asset => {
-      const categoryIndex = window.ASSETS_DATA.findIndex(c => c.name === asset.categorie);
       
-      // On crée l'objet avec la propriété "ticker" (et pas "id") pour ne pas casser ton UI
-      // On crée l'objet en ajoutant TOUTES les données financières pour le Pop-up
-      const newAsset = {
-          ticker: asset.ticker,  
-          name: asset.name,      
-          isin: asset.isin,      
-          labels: asset.labels || [],
-          description: asset.description,
-          dividend_yield: asset.dividend_yield,
-          dividend_growth: asset.dividend_growth,
-          payout_ratio: asset.payout_ratio,
-          pe_ratio: asset.pe_ratio,
-          beta: asset.beta,
-          market_cap: asset.market_cap,
-          price_to_book: asset.price_to_book,
-          price_to_sales: asset.price_to_sales,
-          roe: asset.roe,
-          operating_margin: asset.operating_margin,
-          shares_outstanding: asset.shares_outstanding,
-          eps: asset.eps,
-          dividend_rate: asset.dividend_rate,
-          ex_dividend_date: asset.ex_dividend_date,
-          dividend_frequency: asset.dividend_frequency,
-          last_dividend_value: asset.last_dividend_value,
-          total_revenue: asset.total_revenue,
-          free_cash_flow: asset.free_cash_flow,
-          ebitda: asset.ebitda,
-          gross_profit: asset.gross_profit,
-          operating_income: asset.operating_income,
-          net_income: asset.net_income,
-          revenue_growth: asset.revenue_growth,
-          earnings_growth: asset.earnings_growth,
-          price_growth: asset.price_growth,
-          profit_margins: asset.profit_margins,
-          current_ratio: asset.current_ratio,
-          total_cash: asset.total_cash,
-          total_debt: asset.total_debt,
-          debt_to_equity: asset.debt_to_equity,
-          debt_to_ebitda: asset.debt_to_ebitda,
-          interest_coverage: asset.interest_coverage,
-          dcf_fair_value: asset.dcf_fair_value,
-          dcf_margin: asset.dcf_margin,
-          dcf_wacc: asset.dcf_wacc,
-          dcf_growth_est: asset.dcf_growth_est,
-          dcf_reverse_growth: asset.dcf_reverse_growth,
-          dcf_irr: asset.dcf_irr,
-          current_price: asset.current_price,
-          price_to_fcf: asset.price_to_fcf,
-          peg_ratio: asset.peg_ratio,
-          ev_to_revenue: asset.ev_to_revenue,
-      };
+      // 🌟 LE CORRECTIF EST ICI : On clone l'intégralité des données (y compris l'ID !)
+      const newAsset = { ...asset };
+
+      // Tri intelligent et création dynamique
+      const categoryName = asset.categorie || 'Autres Actifs';
+      let categoryIndex = window.ASSETS_DATA.findIndex(c => c.name === categoryName);
 
       if (categoryIndex !== -1) {
         window.ASSETS_DATA[categoryIndex].items.push(newAsset);
       } else {
-        const fallback = window.ASSETS_DATA.find(c => c.name === 'Nouveaux Actifs');
-        if (fallback) fallback.items.push(newAsset);
+        window.ASSETS_DATA.push({
+            name: categoryName,
+            color: '#888888',
+            items: [newAsset]
+        });
       }
     });
 

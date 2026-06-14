@@ -47,3 +47,59 @@
 @keyframes authSpin { to { transform: rotate(360deg); } }
 .auth-divider { width: 100%; border: none; border-top: 1px solid var(--border); margin: 22px 0 0; }
 .auth-note { font-size: 0.65rem; color: var(--muted2); text-align: center; margin-top: 12px; line-height: 1.5; }
+
+/* --- Style de la case à cocher CGU --- */
+.auth-legal-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.auth-legal-group input[type="checkbox"] {
+  margin-top: 3px; /* Aligne la case avec la première ligne du texte */
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.auth-legal-group label {
+  font-size: 0.75rem; /* Texte plus petit pour les mentions légales */
+  color: var(--muted); /* Utilise la couleur de texte secondaire de ton site */
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.auth-legal-group label a {
+  color: var(--blue); /* Couleur des liens */
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-legal-group label a:hover {
+  text-decoration: underline;
+}
+
+/* --- Gestion du défilement pour les petits écrans --- */
+.auth-box {
+  max-height: 90vh; /* La boîte ne fera jamais plus de 90% de la hauteur de l'écran */
+  overflow-y: auto; /* Ajoute la barre de défilement uniquement si nécessaire */
+}
+
+/* Design d'une barre de défilement ultra-discrète (façon Apple) */
+.auth-box::-webkit-scrollbar {
+  width: 6px;
+}
+.auth-box::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 15px 0; /* Laisse un peu de marge en haut et en bas */
+}
+.auth-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15); /* Liseré translucide */
+  border-radius: 10px;
+}
+.auth-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3); /* Devient plus visible au survol */
+}

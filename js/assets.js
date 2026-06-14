@@ -286,14 +286,16 @@ function _renderIntoContainer(container, filterText, suffix) {
       const chartDiv = document.createElement('div');
       chartDiv.className = 'home-asset-chart';
       chartDiv.id = 'homeChart_' + item.ticker + suffix;
-      // --- FORMATAGE DES DONNÉES ---
-      const peVal = item.pe_ratio != null ? item.pe_ratio.toFixed(1) : '—';
-      const divVal = item.dividend_yield != null ? (item.dividend_yield * 100).toFixed(2) + '%' : '—';
-      const betaVal = item.beta != null ? item.beta.toFixed(2) : '—';
-      const marginVal = item.profit_margins != null ? (item.profit_margins * 100).toFixed(1) + '%' : '—';
+
+      // --- FORMATAGE DES DONNÉES (Sécurisé pour Supabase) ---
+      const peVal = item.pe_ratio != null ? Number(item.pe_ratio).toFixed(1) : '—';
+      const divVal = item.dividend_yield != null ? (Number(item.dividend_yield) * 100).toFixed(2) + '%' : '—';
+      const betaVal = item.beta != null ? Number(item.beta).toFixed(2) : '—';
+      const marginVal = item.profit_margins != null ? (Number(item.profit_margins) * 100).toFixed(1) + '%' : '—';
       let capVal = '—';
       if (item.market_cap != null) {
-        capVal = item.market_cap >= 1e12 ? (item.market_cap / 1e12).toFixed(2) + ' T$' : (item.market_cap / 1e9).toFixed(2) + ' Md$';
+        const mc = Number(item.market_cap);
+        capVal = mc >= 1e12 ? (mc / 1e12).toFixed(2) + ' T$' : (mc / 1e9).toFixed(2) + ' Md$';
       }
 
       // 🌟 CORRECTION DU BUG : On sécurise le nom pour gérer les apostrophes (ex: L'Oréal)

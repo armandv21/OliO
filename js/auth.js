@@ -277,3 +277,34 @@ document.addEventListener('change', function(e) {
     }
   }
 });
+
+// --- GESTION DYNAMIQUE DES PANNEAUX LÉGAUX (MENTIONS LÉGALES) ---
+window.openMentions = async function() {
+  const panel = document.getElementById('panelMentions');
+  const body = document.getElementById('panelMentionsBody');
+  
+  if (panel && body) {
+    if (!body.innerHTML.trim()) {
+      body.innerHTML = '<p style="text-align:center; color:var(--muted); font-style:italic;">Chargement des mentions légales...</p>';
+      try {
+        const response = await fetch('mentions-content.html');
+        if (!response.ok) throw new Error("Fichier introuvable");
+        body.innerHTML = await response.text();
+      } catch (err) {
+        body.innerHTML = '<p style="color:var(--rose-lt); text-align:center;">Erreur lors du chargement des mentions légales.</p>';
+      }
+    }
+    
+    panel.classList.add('active', 'open');
+    panel.style.display = 'block';
+    panel.style.zIndex = '12000';
+  }
+};
+
+window.closeMentions = function() {
+  const panel = document.getElementById('panelMentions');
+  if (panel) {
+    panel.classList.remove('active', 'open');
+    panel.style.display = 'none';
+  }
+};

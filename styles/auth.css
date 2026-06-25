@@ -84,8 +84,8 @@
 
 /* --- Gestion du défilement pour les petits écrans --- */
 .auth-box {
-  max-height: 90vh; /* La boîte ne fera jamais plus de 90% de la hauteur de l'écran */
-  overflow-y: auto; /* Ajoute la barre de défilement uniquement si nécessaire */
+  max-height: calc(100vh - 140px); 
+  overflow-y: auto;
 }
 
 /* Design d'une barre de défilement ultra-discrète (façon Apple) */

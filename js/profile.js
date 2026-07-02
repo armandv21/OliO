@@ -167,7 +167,7 @@ window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
         const user = session.user;
         const email = user.email || '';
         const { data: profile } = await window.supabaseClient
-          .from('data').select('pseudo, nom, prenom, date_naissance, abonnement').eq('id', user.id).single();
+          .from('data').select('pseudo, nom, prenom, date_naissance, abonnement, role').eq('id', user.id).single();
         _profileData = { ...profile, email };
         _applyProfileToUI(_profileData);
         _profileLoaded = true;

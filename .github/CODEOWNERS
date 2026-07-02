@@ -1,0 +1,9 @@
+# Propriétaires de code — toute PR modifiant ces fichiers requiert une review manuelle.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Fichiers critiques — require review from armandv21
+index.html                    @armandv21
+.github/workflows/*.yml       @armandv21
+tests/smoke.js                @armandv21
+js/copilot.js                 @armandv21
+

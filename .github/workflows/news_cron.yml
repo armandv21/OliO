@@ -1,0 +1,45 @@
+name: OliO News Bot
+
+on:
+  schedule:
+    # 3 fois par jour — 8h, 16h, 22h Paris (CEST = UTC+2)
+    - cron: '0 6 * * *'    # 8h Paris
+    - cron: '0 14 * * *'   # 16h Paris
+    - cron: '0 20 * * *'   # 22h Paris
+  workflow_dispatch:         # Déclenchement manuel possible
+
+permissions:
+  contents: write            # nécessaire pour git push
+
+jobs:
+  generate-article:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install deps
+        run: pip install anthropic httpx
+
+      - name: Generate article
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/news_bot.py
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news.json
+          git diff --staged --quiet || git commit -m "news: article du $(date -u +'%d/%m/%Y %H:%M UTC')"
+          git push

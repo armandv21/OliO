@@ -29,8 +29,34 @@ window.doSignup = async function() {
   const prenom = document.getElementById('signupPrenom').value.trim();
   const dateNaissance = document.getElementById('signupDate').value;
 
+// 🌟 GESTION DE L'ERREUR CONTEXTUELLE DES CGU 🌟
+  const cguCheckbox = document.getElementById('cgu-checkbox');
+  const cguError = document.getElementById('cguError');
+  
+  // On réinitialise l'affichage au cas où
+  if (cguError) cguError.style.display = 'none';
+  if (cguCheckbox) {
+      cguCheckbox.style.boxShadow = 'none';
+      cguCheckbox.style.border = 'none';
+  }
+
+  if (cguCheckbox && !cguCheckbox.checked) {
+    // 1. Affiche le message rouge
+    if (cguError) cguError.style.display = 'block';
+    
+    // 2. La touche "Pro" : Un halo rouge translucide doux
+    cguCheckbox.style.boxShadow = "0 0 0 3px rgba(239, 68, 68, 0.25)";
+    cguCheckbox.style.borderRadius = "3px"; // Arrondit légèrement le halo pour suivre la case
+    
+    // (Optionnel) On tente de colorer la bordure pour les navigateurs qui l'acceptent
+    cguCheckbox.style.border = "1px solid #ef4444"; 
+    
+    return; // On arrête tout, pas d'inscription
+  }
+
+  // Vérification des autres champs standards (affichés en haut)
   if (!email || !password || !pseudo) { 
-    errDiv.textContent = 'Veuillez remplir au moins l\'email, le mot de passe et le pseudo.'; 
+    errDiv.textContent = "Veuillez renseigner tous les champs obligatoires pour finaliser votre inscription."; 
     return; 
   }
 
@@ -77,7 +103,7 @@ window.doLogin = async function() {
   errDiv.textContent = '';
 
   if (!identifier || !password) { 
-    errDiv.textContent = 'Veuillez remplir tous les champs.'; 
+    errDiv.textContent = 'Veuillez compléter tous les champs.'; 
     return; 
   }
 
@@ -168,3 +194,117 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateAuthUI(false); // Mode visiteur
     }
 });
+
+// Fait disparaître l'alerte instantanément dès que l'utilisateur coche la case
+document.getElementById('cgu-checkbox')?.addEventListener('change', function() {
+  if (this.checked) {
+    document.getElementById('cguError').style.display = 'none';
+    this.style.boxShadow = 'none';
+    this.style.border = 'none';
+  }
+});
+
+// --- GESTION DYNAMIQUE DES PANNEAUX LÉGAUX (CGU) ---
+window.openCgu = async function() {
+  const panel = document.getElementById('panelCgu');
+  const body = document.getElementById('panelCguBody');
+  
+  if (panel && body) {
+    // 🌟 INTELLIGENT : On ne télécharge le fichier que s'il est vide
+    if (!body.innerHTML.trim()) {
+      body.innerHTML = '<p style="text-align:center; color:var(--muted); font-style:italic;">Chargement des CGU...</p>';
+      try {
+        const response = await fetch('cgu-content.html');
+        body.innerHTML = await response.text();
+      } catch (err) {
+        body.innerHTML = '<p style="color:var(--rose-lt); text-align:center;">Erreur lors du chargement des conditions générales.</p>';
+      }
+    }
+    
+    panel.classList.add('active', 'open');
+    panel.style.display = 'block';
+    panel.style.zIndex = '12000';
+  }
+};
+
+window.closeCgu = function() {
+  const panel = document.getElementById('panelCgu');
+  if (panel) {
+    panel.classList.remove('active', 'open');
+    panel.style.display = 'none';
+  }
+};
+
+// --- GESTION DYNAMIQUE DES PANNEAUX LÉGAUX (CONFIDENTIALITÉ) ---
+window.openPrivacy = async function() {
+  const panel = document.getElementById('panelPrivacy');
+  const body = document.getElementById('panelPrivacyBody');
+  
+  if (panel && body) {
+    // On ne télécharge le fichier que s'il est vide
+    if (!body.innerHTML.trim()) {
+      body.innerHTML = '<p style="text-align:center; color:var(--muted); font-style:italic;">Chargement de la politique...</p>';
+      try {
+        const response = await fetch('privacy-content.html');
+        body.innerHTML = await response.text();
+      } catch (err) {
+        body.innerHTML = '<p style="color:var(--rose-lt); text-align:center;">Erreur lors du chargement de la politique de confidentialité.</p>';
+      }
+    }
+    
+    panel.classList.add('active', 'open');
+    panel.style.display = 'block';
+    panel.style.zIndex = '12000';
+  }
+};
+
+window.closePrivacy = function() {
+  const panel = document.getElementById('panelPrivacy');
+  if (panel) {
+    panel.classList.remove('active', 'open');
+    panel.style.display = 'none';
+  }
+};
+
+// --- RETIRER L'ERREUR INSTANTANÉMENT QUAND ON COCHE LA CASE ---
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'cgu-checkbox') {
+    if (e.target.checked) {
+      const errorMsg = document.getElementById('cguError');
+      if (errorMsg) errorMsg.style.display = 'none';
+      e.target.style.boxShadow = 'none';
+      e.target.style.border = 'none';
+    }
+  }
+});
+
+// --- GESTION DYNAMIQUE DES PANNEAUX LÉGAUX (MENTIONS LÉGALES) ---
+window.openMentions = async function() {
+  const panel = document.getElementById('panelMentions');
+  const body = document.getElementById('panelMentionsBody');
+  
+  if (panel && body) {
+    if (!body.innerHTML.trim()) {
+      body.innerHTML = '<p style="text-align:center; color:var(--muted); font-style:italic;">Chargement des mentions légales...</p>';
+      try {
+        const response = await fetch('mentions-content.html');
+        if (!response.ok) throw new Error("Fichier introuvable");
+        body.innerHTML = await response.text();
+      } catch (err) {
+        body.innerHTML = '<p style="color:var(--rose-lt); text-align:center;">Erreur lors du chargement des mentions légales.</p>';
+      }
+    }
+    
+    panel.classList.add('active', 'open');
+    panel.style.display = 'block';
+    panel.style.zIndex = '12000';
+  }
+};
+
+window.closeMentions = function() {
+  const panel = document.getElementById('panelMentions');
+  if (panel) {
+    panel.classList.remove('active', 'open');
+    panel.style.display = 'none';
+  }
+};

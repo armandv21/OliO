@@ -286,14 +286,16 @@ function _renderIntoContainer(container, filterText, suffix) {
       const chartDiv = document.createElement('div');
       chartDiv.className = 'home-asset-chart';
       chartDiv.id = 'homeChart_' + item.ticker + suffix;
-      // --- FORMATAGE DES DONNÉES ---
-      const peVal = item.pe_ratio != null ? item.pe_ratio.toFixed(1) : '—';
-      const divVal = item.dividend_yield != null ? (item.dividend_yield * 100).toFixed(2) + '%' : '—';
-      const betaVal = item.beta != null ? item.beta.toFixed(2) : '—';
-      const marginVal = item.profit_margins != null ? (item.profit_margins * 100).toFixed(1) + '%' : '—';
+
+      // --- FORMATAGE DES DONNÉES (Sécurisé pour Supabase) ---
+      const peVal = item.pe_ratio != null ? Number(item.pe_ratio).toFixed(1) : '—';
+      const divVal = item.dividend_yield != null ? (Number(item.dividend_yield) * 100).toFixed(2) + '%' : '—';
+      const betaVal = item.beta != null ? Number(item.beta).toFixed(2) : '—';
+      const marginVal = item.profit_margins != null ? (Number(item.profit_margins) * 100).toFixed(1) + '%' : '—';
       let capVal = '—';
       if (item.market_cap != null) {
-        capVal = item.market_cap >= 1e12 ? (item.market_cap / 1e12).toFixed(2) + ' T$' : (item.market_cap / 1e9).toFixed(2) + ' Md$';
+        const mc = Number(item.market_cap);
+        capVal = mc >= 1e12 ? (mc / 1e12).toFixed(2) + ' T$' : (mc / 1e9).toFixed(2) + ' Md$';
       }
 
       // 🌟 CORRECTION DU BUG : On sécurise le nom pour gérer les apostrophes (ex: L'Oréal)
@@ -380,53 +382,57 @@ async function renderHomeChart(ticker, name, catColor, suffix) {
 
 window.selectedAssets = window.selectedAssets || [];
 
-function homeToggleAsset(ticker, checked) {
+window.homeToggleAsset = function(ticker, checked) {
+  // 1. Initialisation de la sélection si elle n'existe pas
   if (!window.selectedAssets) window.selectedAssets = [];
 
-  // 🌟 APPEL À LA VRAIE BASE DE DONNÉES :
+  // 2. Vérification du statut Premium
   const isPremium = typeof window.isUserPremium === 'function' ? window.isUserPremium() : false;
 
-  // 1. VÉRIFICATION PREMIUM : Si on veut cocher un 4ème actif
+  // 3. LOGIQUE DE BLOCAGE (La partie qui nous intéresse)
   if (checked && window.selectedAssets.length >= 3 && !window.selectedAssets.includes(ticker) && !isPremium) {
-    
-    const modal = document.getElementById('premiumModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-        modal.style.display = '';
-    }
-    
-    // On force la case à décocher pour que l'interface soit cohérente
-    const cb = document.querySelector('input[type=checkbox][onclick*="' + ticker + '"]');
-    if (cb) cb.checked = false;
-    
-    return; // On arrête l'exécution ici
+    // Affiche le pop-up
+
+
+    openPremiumModal();
+    const checkboxes = document.querySelectorAll(`input[type="checkbox"][onclick*="${ticker}"]`);
+    checkboxes.forEach(cb => cb.checked = false);
+    return;
   }
 
-  // 2. LOGIQUE NORMALE DE SÉLECTION
-  const cb = document.querySelector('#assetList .asset-item input[type=checkbox][data-ticker="' + ticker + '"]');
-  
+  // 4. LOGIQUE DE MISE À JOUR NORMALE
   if (checked && !window.selectedAssets.includes(ticker)) {
     window.selectedAssets.push(ticker);
-    if (cb) cb.checked = true;
   } else if (!checked) {
     window.selectedAssets = window.selectedAssets.filter(t => t !== ticker);
-    if (cb) cb.checked = false;
   }
 
-  // 3. MISE À JOUR VISUELLE
+  // Mise à jour visuelle des lignes ET cases à cocher (les deux containers)
   ['', '_sb'].forEach(sfx => {
     const row = document.getElementById('homeRow_' + ticker + sfx);
     if (row) {
-      row.classList.toggle('selected', checked);
-      const rowCb = row.querySelector('input[type=checkbox]');
-      if (rowCb) rowCb.checked = checked;
+      row.classList.toggle('selected', window.selectedAssets.includes(ticker));
+      const cb = row.querySelector('input[type=checkbox]');
+      if (cb) cb.checked = window.selectedAssets.includes(ticker);
     }
   });
 
+  // Mise à jour de l'affichage
   updateHomeCount();
-  if (typeof updateSidebarCount === 'function') updateSidebarCount();
-}
+};
+
+window.openPremiumModal = function() {
+  const modal = document.getElementById('premiumModal');
+  if (!modal) return;
+  modal.style.setProperty('display', 'flex', 'important');
+};
+
+window.closePremiumModal = function() {
+  const modal = document.getElementById('premiumModal');
+  if (!modal) return;
+  modal.style.setProperty('display', 'none', 'important');
+};
+
 
 function updateHomeCount() {
   const el = document.getElementById('homeSelectedCount');
@@ -1331,7 +1337,6 @@ window.openAssetPanel = openAssetPanel;
 window.closeAssetPanel = closeAssetPanel;
 window.syncAllParams = syncAllParams;
 window.renderHomeAssetList = renderHomeAssetList;
-window.homeToggleAsset = homeToggleAsset;
 window.updateHomeCount = updateHomeCount;
 window.filterHomeAssets = filterHomeAssets;
 window.clearHomeSearch = clearHomeSearch;

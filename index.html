@@ -28,7 +28,8 @@
 <!-- Auth check inline — avant tout rendu -->
 
 <div id="authOverlay" class="auth-overlay hidden">
-  <div class="auth-box" style="position: relative;">
+  
+  <div class="auth-box" style="position: relative; width: 100%; max-width: 420px; max-height: calc(100vh - 200px); overflow-y: auto;">
     <button onclick="closeAuthModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted);">✕</button>
     <img src="images/logo_olio.png" alt="OliO Logo" style="height:44px;width:auto;margin:0 auto 1.5rem;display:block;"/>
     
@@ -76,6 +77,22 @@
         <label for="signupDate">Date de naissance</label>
         <input type="date" id="signupDate" />
       </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 8px; text-align: left; margin-top: 10px;">
+        <input type="checkbox" id="cgu-checkbox" style="margin-top: 3px; cursor: pointer; width: 16px; height: 16px; outline-offset: 2px; border-radius: 3px; flex-shrink: 0;" required>
+        
+        <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.4; margin: 0;">
+          <label for="cgu-checkbox" style="cursor: pointer; display: inline;">J'ai lu et j'accepte les </label>
+          <span onclick="openCgu()" style="color: var(--blue); cursor: pointer; font-weight: 600; text-decoration: underline;">Conditions Générales d'Utilisation (CGU)</span>
+          <label for="cgu-checkbox" style="cursor: pointer; display: inline;"> et je confirme avoir pris connaissance de la </label>
+          <span onclick="openPrivacy()" style="color: var(--blue); cursor: pointer; font-weight: 600; text-decoration: underline;">Politique de Confidentialité</span>.
+          <label for="cgu-checkbox" style="cursor: pointer; display: inline;"> Je reconnais qu'OliO est un outil de calcul mathématique et ne fournit aucun conseil en investissement.</label>
+        </div>
+      </div>
+
+      <div id="cguError" style="display: none; color: var(--rose-lt); font-size: 0.7rem; font-weight: 600; text-align: left; margin-top: 6px; margin-bottom: 20px; padding-left: 24px;">
+        Veuillez cocher cette case pour valider votre inscription.
+      </div>
       
       <button class="auth-btn" onclick="doSignup()" style="background: var(--blue);">Valider l'inscription</button>
       
@@ -83,8 +100,17 @@
         Déjà un compte ? <b>Se connecter</b>
       </p>
     </div>
-
+  </div> 
+  <div style="position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; font-size: 0.75rem; color: var(--muted, #64748b); z-index: 50; pointer-events: auto;">
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-bottom: 8px;">
+      
+      <span onclick="openMentions()" style="cursor: pointer; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--ink, #0f172a)'" onmouseout="this.style.color='var(--muted, #64748b)'">Mentions Légales</span>
+      <span onclick="openCgu()" style="cursor: pointer; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--ink, #0f172a)'" onmouseout="this.style.color='var(--muted, #64748b)'">CGU / CGV</span>
+      <span onclick="openPrivacy()" style="cursor: pointer; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--ink, #0f172a)'" onmouseout="this.style.color='var(--muted, #64748b)'">Confidentialité</span>
+    </div>
+    <div style="font-size: 0.7rem; opacity: 0.8;">© 2026 OliO. Tous droits réservés.</div>
   </div>
+
 </div>
 
 <div class="loading-overlay" id="loadingOverlay">
@@ -715,6 +741,38 @@
   </div>
 </div>
 
+<div class="fullscreen-panel" id="panelCgu" style="display: none; z-index: 12000; height: 100vh; overflow-y: auto;">
+  <div class="fullscreen-panel-header">
+    <div style="display:flex;align-items:center">
+      <span class="fullscreen-panel-logo">
+        <img src="images/logo_olio.png" alt="OliO Logo" style="height:30px;width:auto;vertical-align:middle;">
+      </span>
+      <span class="fullscreen-panel-title" style="color: var(--ink, #0f172a) !important; font-weight: 600;">Conditions Générales d'Utilisation</span>
+    </div>
+    <div class="fullscreen-panel-actions">
+      <button class="fullscreen-panel-close" onclick="closeCgu()" title="Fermer" style="color: var(--ink, #0f172a) !important; background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+  </div>
+  <div class="fullscreen-panel-body" id="panelCguBody" style="max-width:780px; margin: 0 auto; padding: 40px 24px 80px; text-align: justify; color: var(--ink2); line-height: 1.7;">
+    </div>
+</div>
+
+<div class="fullscreen-panel" id="panelPrivacy" style="display: none; z-index: 12000; height: 100vh; overflow-y: auto;">
+  <div class="fullscreen-panel-header">
+    <div style="display:flex;align-items:center">
+      <span class="fullscreen-panel-logo">
+        <img src="images/logo_olio.png" alt="OliO Logo" style="height:30px;width:auto;vertical-align:middle;">
+      </span>
+      <span class="fullscreen-panel-title" style="color: var(--ink, #0f172a) !important; font-weight: 600;">Politique de Confidentialité</span>
+    </div>
+    <div class="fullscreen-panel-actions">
+      <button class="fullscreen-panel-close" onclick="closePrivacy()" title="Fermer" style="color: var(--ink, #0f172a) !important; background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+  </div>
+  <div class="fullscreen-panel-body" id="panelPrivacyBody" style="max-width:780px; margin: 0 auto; padding: 40px 24px 80px; text-align: justify; color: var(--ink2); line-height: 1.7;">
+    </div>
+</div>
+
 <!-- ── POPUP FICHE COMPLÈTE ACTIF ── -->
 <div class="asset-sheet-overlay" id="assetSheetOverlay" onclick="if(event.target===this)closeAssetSheet()">
   <div class="asset-sheet-box">
@@ -1070,6 +1128,30 @@
     </div>
   </div>
 </div>
+<div id="cguAlertModal" class="custom-alert-overlay">
+  <div class="custom-alert-box">
+    <div class="custom-alert-icon">⚠️</div>
+    <h3 class="custom-alert-title">Action requise</h3>
+    <p class="custom-alert-text">Vous devez accepter les Conditions Générales d'Utilisation et la Politique de Confidentialité pour créer votre compte.</p>
+    <button class="custom-alert-btn" onclick="closeCguAlert()">Compris</button>
+  </div>
+</div>
+<div class="fullscreen-panel" id="panelMentions" style="display: none; z-index: 12000; height: 100vh; overflow-y: auto;">
+  <div class="fullscreen-panel-header">
+    <div style="display:flex;align-items:center">
+      <span class="fullscreen-panel-logo">
+        <img src="images/logo_olio.png" alt="OliO Logo" style="height:30px;width:auto;vertical-align:middle;">
+      </span>
+      <span class="fullscreen-panel-title" style="color: var(--ink, #0f172a) !important; font-weight: 600;">Mentions Légales</span>
+    </div>
+    <div class="fullscreen-panel-actions">
+      <button class="fullscreen-panel-close" onclick="closeMentions()" title="Fermer" style="color: var(--ink, #0f172a) !important; background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+  </div>
+  <div class="fullscreen-panel-body" id="panelMentionsBody" style="max-width:780px; margin: 0 auto; padding: 40px 24px 80px; text-align: justify; color: var(--ink2); line-height: 1.7;">
+  </div>
+</div>
+
 
 <div class="popup-overlay hidden" id="alertModal" onclick="if(event.target===this)closeAlertModal()">
   <div class="popup-box" style="max-width:360px;width:90%">
@@ -1084,8 +1166,7 @@
 
 <!-- JS modules -->
 <script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/auth.js"></script><script src="js/profile.js"></script>
 <script src="js/assets.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/optimization.js"></script>
@@ -1100,5 +1181,32 @@
 <script src="js/stripe.js"></script>
 <script src="js/panels/news.js"></script>
 <script src="js/copilot.js"></script>
+<script>
+  window.ouvrirMentionsSecours = function() {
+    const panel = document.getElementById('panelMentions');
+    const body = document.getElementById('panelMentionsBody');
+    
+    // 1. On force l'affichage quoi qu'il arrive
+    panel.style.display = 'block';
+    panel.style.zIndex = '12000';
+    panel.classList.add('active', 'open');
+    
+    // 2. On affiche un texte de chargement
+    body.innerHTML = '<div style="padding:60px; text-align:center; color:#64748b; font-style:italic;">Chargement du fichier mentions-content.html...</div>';
+    
+    // 3. On va chercher le fichier
+    fetch('mentions-content.html')
+      .then(response => {
+        if (!response.ok) throw new Error("Fichier introuvable");
+        return response.text();
+      })
+      .then(texte => {
+        body.innerHTML = texte;
+      })
+      .catch(erreur => {
+        body.innerHTML = '<div style="padding:60px; text-align:center; color:#ef4444; font-weight:bold;">Erreur : Le fichier "mentions-content.html" n\'a pas été trouvé. Vérifie son nom !</div>';
+      });
+  };
+</script>
 </body>
 </html>
